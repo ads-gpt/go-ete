@@ -796,6 +796,13 @@
       .table-container {
         border-radius: 30px;
         padding: 1.2rem;
+        overflow-x: hidden;
+        overflow-y: visible;
+      }
+
+      table.admin-table {
+        width: 100%;
+        table-layout: fixed;
       }
 
       th {
@@ -809,10 +816,105 @@
       td {
         border-bottom: 1px solid rgba(112, 86, 53, 0.08);
         color: #34281d;
+        vertical-align: top;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        white-space: normal;
       }
 
       tbody tr:hover {
         background: rgba(199, 133, 67, 0.05);
+      }
+
+      .cell-muted {
+        color: #6f5f4b;
+        font-size: 0.88rem;
+      }
+
+      .cell-tight {
+        font-size: 0.9rem;
+      }
+
+      .cell-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 0.18rem;
+      }
+
+      .cell-stack strong {
+        font-weight: 700;
+      }
+
+      .cell-stack small {
+        color: #8a7760;
+        font-size: 0.8rem;
+        line-height: 1.35;
+      }
+
+      .pagination-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.9rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(112, 86, 53, 0.1);
+      }
+
+      .pagination-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.7rem;
+        color: #6f5f4b;
+        font-size: 0.9rem;
+      }
+
+      .page-size-select {
+        border-radius: 12px;
+        border: 1px solid rgba(112, 86, 53, 0.15);
+        background: rgba(255, 255, 255, 0.8);
+        color: #34281d;
+        padding: 0.55rem 0.8rem;
+        min-width: 86px;
+      }
+
+      .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+      }
+
+      .page-indicator {
+        color: #6f5f4b;
+        font-size: 0.9rem;
+        min-width: 74px;
+        text-align: center;
+      }
+
+      .page-btn {
+        min-width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        border: 1px solid rgba(112, 86, 53, 0.14);
+        background: rgba(255, 255, 255, 0.84);
+        color: #34281d;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.18s ease, opacity 0.18s ease;
+      }
+
+      .page-btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 1);
+      }
+
+      .page-btn:disabled {
+        opacity: 0.42;
+        cursor: not-allowed;
       }
 
       .badge {
@@ -1005,7 +1107,7 @@
 
       .hero-panel-grid {
         display: grid;
-        grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
+        grid-template-columns: 1fr;
         gap: 1rem;
         align-items: start;
       }
@@ -1170,6 +1272,15 @@
         .hero-stat-grid {
           grid-template-columns: 1fr;
         }
+
+        .pagination-bar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .pagination-controls {
+          width: 100%;
+        }
       }
     </style>
   </head>
@@ -1302,19 +1413,19 @@
                   Review key rescue activity at a glance, then jump directly into
                   the queue that needs action.
                 </p>
-              </div>
-              <div class="hero-stat-grid">
-                <div class="hero-stat">
-                  <span>Available Pets</span>
-                  <strong id="overview-available-pets">0</strong>
-                </div>
-                <div class="hero-stat">
-                  <span>Vaccination Rate</span>
-                  <strong id="overview-vaccination-rate">0%</strong>
-                </div>
-                <div class="hero-stat">
-                  <span>Average Age</span>
-                  <strong id="overview-average-age">0y</strong>
+                <div class="hero-stat-grid">
+                  <div class="hero-stat">
+                    <span>Total Pets</span>
+                    <strong id="overview-total-pets">0</strong>
+                  </div>
+                  <div class="hero-stat">
+                    <span>Vaccination Rate</span>
+                    <strong id="overview-vaccination-rate">0%</strong>
+                  </div>
+                  <div class="hero-stat">
+                    <span>Average Age</span>
+                    <strong id="overview-average-age">0y</strong>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1803,9 +1914,18 @@
       let petModalMode = "add"; // 'add' | 'edit'
       let _adoptionsCache = [];
       let _bookingsCache = [];
+      let _donationsCache = [];
       let _messagesCache = [];
       let _activeInquiryId = "";
       let _statusUpdateInFlight = false;
+      const DEFAULT_PAGE_SIZE = 15;
+      const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+      const _tablePagination = {
+        adoptions: { page: 1, pageSize: DEFAULT_PAGE_SIZE },
+        bookings: { page: 1, pageSize: DEFAULT_PAGE_SIZE },
+        donations: { page: 1, pageSize: DEFAULT_PAGE_SIZE },
+        messages: { page: 1, pageSize: DEFAULT_PAGE_SIZE },
+      };
 
       function openPetModal(pet) {
         petModalMode = pet ? "edit" : "add";
@@ -1960,6 +2080,105 @@
         setTextIfPresent("overview-last-sync-top", `Updated ${stamp}`);
       }
 
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function getPageSizeChoices(activeSize) {
+        return [activeSize, ...PAGE_SIZE_OPTIONS.filter((size) => size !== activeSize)];
+      }
+
+      function getPaginationMeta(sectionKey, items) {
+        const state = _tablePagination[sectionKey];
+        const totalItems = items.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / state.pageSize));
+        if (state.page > totalPages) {
+          state.page = totalPages;
+        }
+        const start = totalItems === 0 ? 0 : (state.page - 1) * state.pageSize;
+        const end = Math.min(start + state.pageSize, totalItems);
+        return {
+          page: state.page,
+          pageSize: state.pageSize,
+          totalItems,
+          totalPages,
+          start,
+          end,
+          items: items.slice(start, end),
+        };
+      }
+
+      function renderPagination(sectionKey, meta, noun) {
+        const options = getPageSizeChoices(meta.pageSize)
+          .map(
+            (size) =>
+              `<option value="${size}" ${size === meta.pageSize ? "selected" : ""}>${size}${size === DEFAULT_PAGE_SIZE ? " (Default)" : ""}</option>`,
+          )
+          .join("");
+
+        return `
+          <div class="pagination-bar">
+            <div class="pagination-meta">
+              <span>Showing ${meta.totalItems === 0 ? 0 : meta.start + 1}-${meta.end} of ${meta.totalItems} ${noun}</span>
+              <label>
+                <span class="sr-only">Rows per page</span>
+                <select class="page-size-select" onchange="setTablePageSize('${sectionKey}', this.value)">
+                  ${options}
+                </select>
+              </label>
+            </div>
+            <div class="pagination-controls">
+              <button class="page-btn" type="button" ${meta.page <= 1 ? "disabled" : ""} onclick="setTablePage('${sectionKey}', ${meta.page - 1})">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <span class="page-indicator">Page ${meta.page} / ${meta.totalPages}</span>
+              <button class="page-btn" type="button" ${meta.page >= meta.totalPages ? "disabled" : ""} onclick="setTablePage('${sectionKey}', ${meta.page + 1})">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      function setTablePage(sectionKey, nextPage) {
+        const state = _tablePagination[sectionKey];
+        if (!state) return;
+        state.page = Math.max(1, nextPage);
+        rerenderPaginatedSection(sectionKey);
+      }
+
+      function setTablePageSize(sectionKey, nextSize) {
+        const state = _tablePagination[sectionKey];
+        if (!state) return;
+        state.pageSize = Number.parseInt(nextSize, 10) || DEFAULT_PAGE_SIZE;
+        state.page = 1;
+        rerenderPaginatedSection(sectionKey);
+      }
+
+      function rerenderPaginatedSection(sectionKey) {
+        switch (sectionKey) {
+          case "adoptions":
+            renderAdoptionsTable();
+            break;
+          case "bookings":
+            renderBookingsTable();
+            break;
+          case "donations":
+            renderDonationsTable();
+            break;
+          case "messages":
+            renderMessagesTable();
+            break;
+          default:
+            break;
+        }
+      }
+
       function setRefreshButtonLoading(button, isLoading) {
         if (!button) return;
         const icon = button.querySelector("i");
@@ -2088,7 +2307,7 @@
           document.getElementById("stat-users").textContent =
             stats.totalUsers || 0;
           setTextIfPresent("stat-donations", stats.totalDonations || 0);
-          setTextIfPresent("overview-available-pets", petsByStatus.Available || 0);
+          setTextIfPresent("overview-total-pets", stats.totalPets || 0);
           setTextIfPresent("overview-under-care", petsByStatus["Under Care"] || 0);
           setTextIfPresent("overview-adopted-pets", petsByStatus.Adopted || 0);
           setTextIfPresent(
@@ -2260,6 +2479,202 @@
         if (pet) openPetModal(pet);
       }
 
+      function renderAdoptionsTable() {
+        const target = document.getElementById("adoptions-table");
+        const adoptions = _adoptionsCache || [];
+
+        if (!adoptions.length) {
+          target.innerHTML =
+            '<p class="text-gray-500 text-center py-8">No adoption inquiries yet</p>';
+          return;
+        }
+
+        const meta = getPaginationMeta("adoptions", adoptions);
+        target.innerHTML = `
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Pet ID</th>
+                <th>Adopter</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Message</th>
+                <th>Actions</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${meta.items
+                .map(
+                  (adoption, index) => `
+                <tr>
+                  <td class="cell-tight">${meta.start + index + 1}</td>
+                  <td class="cell-tight">${escapeHtml(adoption.petId || "-")}</td>
+                  <td><div class="cell-stack"><strong>${escapeHtml(adoption.adopterName || "-")}</strong><small>${escapeHtml(adoption.email || "")}</small></div></td>
+                  <td class="cell-tight">${escapeHtml(adoption.phone || "-")}</td>
+                  <td><span class="badge badge-${adoption.status === "Pending" ? "warning" : adoption.status === "Approved" ? "success" : "info"}">${escapeHtml(adoption.status)}</span></td>
+                  <td class="cell-muted">${adoption.message ? escapeHtml(adoption.message.substring(0, 72) + (adoption.message.length > 72 ? "..." : "")) : '<span class="text-gray-400">-</span>'}</td>
+                  <td>
+                    <button class="btn btn-secondary action-btn" onclick="openInquiryModal('${adoption.id}')">
+                      <i class="fas fa-eye"></i> Review
+                    </button>
+                  </td>
+                  <td class="cell-tight">${adoption.createdAt ? new Date(adoption.createdAt).toLocaleDateString() : "-"}</td>
+                </tr>
+              `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+          ${renderPagination("adoptions", meta, "inquiries")}
+        `;
+      }
+
+      function renderBookingsTable() {
+        const target = document.getElementById("bookings-table");
+        const bookings = _bookingsCache || [];
+
+        if (!bookings.length) {
+          target.innerHTML =
+            '<p class="text-gray-500 text-center py-8">No bookings yet</p>';
+          return;
+        }
+
+        const meta = getPaginationMeta("bookings", bookings);
+        target.innerHTML = `
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Service</th>
+                <th>Pet Name</th>
+                <th>Owner</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${meta.items
+                .map(
+                  (booking) => `
+                <tr>
+                  <td class="cell-tight">${escapeHtml(booking.id || "-")}</td>
+                  <td class="cell-tight">${escapeHtml(booking.serviceId || "-")}</td>
+                  <td>${escapeHtml(booking.petName || "-")}</td>
+                  <td><div class="cell-stack"><strong>${escapeHtml(booking.ownerName || "-")}</strong><small>${escapeHtml(booking.email || "")}</small></div></td>
+                  <td class="cell-tight">${escapeHtml(booking.date || (booking.bookedAt ? new Date(booking.bookedAt).toLocaleDateString() : "-"))}</td>
+                  <td><span class="badge badge-${booking.status === "Pending" ? "warning" : "success"}">${escapeHtml(booking.status || "-")}</span></td>
+                  <td>
+                    <button class="btn btn-secondary action-btn" onclick="openBookingModal('${booking.id}')">
+                      <i class="fas fa-eye"></i> Review
+                    </button>
+                  </td>
+                </tr>
+              `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+          ${renderPagination("bookings", meta, "bookings")}
+        `;
+      }
+
+      function renderDonationsTable() {
+        const target = document.getElementById("donations-table");
+        const donations = _donationsCache || [];
+
+        if (!donations.length) {
+          target.innerHTML =
+            '<p class="text-gray-500 text-center py-8">No donations yet</p>';
+          return;
+        }
+
+        const meta = getPaginationMeta("donations", donations);
+        target.innerHTML = `
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Donor Name</th>
+                <th>Email</th>
+                <th>Amount</th>
+                <th>Payment Method</th>
+                <th>Transaction ID</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${meta.items
+                .map(
+                  (donation) => `
+                <tr>
+                  <td class="cell-tight">${escapeHtml(donation.id || "-")}</td>
+                  <td>${escapeHtml(donation.donorName || "-")}</td>
+                  <td class="cell-muted">${escapeHtml(donation.donorEmail || "-")}</td>
+                  <td class="cell-tight">₹${Number(donation.amount || 0).toLocaleString()}</td>
+                  <td class="cell-tight">${escapeHtml(donation.paymentMethod || "-")}</td>
+                  <td class="cell-muted">${escapeHtml(donation.transactionId || "-")}</td>
+                  <td><span class="badge badge-${donation.status === "Completed" ? "success" : donation.status === "Pending" ? "warning" : "info"}">${escapeHtml(donation.status || "-")}</span></td>
+                  <td class="cell-tight">${donation.createdAt ? new Date(donation.createdAt).toLocaleDateString() : "-"}</td>
+                </tr>
+              `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+          ${renderPagination("donations", meta, "donations")}
+        `;
+      }
+
+      function renderMessagesTable() {
+        const target = document.getElementById("messages-table");
+        const messages = _messagesCache || [];
+
+        if (!messages.length) {
+          target.innerHTML =
+            '<p class="text-gray-500 text-center py-8">No contact messages yet</p>';
+          return;
+        }
+
+        const meta = getPaginationMeta("messages", messages);
+        target.innerHTML = `
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Purpose</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${meta.items
+                .map(
+                  (msg, index) => `
+                <tr>
+                  <td class="cell-tight">${meta.start + index + 1}</td>
+                  <td><div class="cell-stack"><strong>${escapeHtml(msg.name || "-")}</strong><small>${escapeHtml(msg.email || "")}</small></div></td>
+                  <td class="cell-muted">${escapeHtml(msg.purpose || "-")}</td>
+                  <td class="cell-tight">${msg.sentAt ? new Date(msg.sentAt).toLocaleDateString() : "-"}</td>
+                  <td>
+                    <button class="btn btn-secondary action-btn" onclick="openMessageModal(${meta.start + index})">
+                      <i class="fas fa-eye"></i> View
+                    </button>
+                  </td>
+                </tr>
+              `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+          ${renderPagination("messages", meta, "messages")}
+        `;
+      }
+
       // Load adoptions
       async function loadAdoptions() {
         try {
@@ -2274,54 +2689,7 @@
             "overview-pending-inquiries",
             adoptions.filter((adoption) => adoption.status === "Pending").length,
           );
-
-          if (!adoptions || adoptions.length === 0) {
-            document.getElementById("adoptions-table").innerHTML =
-              '<p class="text-gray-500 text-center py-8">No adoption inquiries yet</p>';
-            markDashboardSynced();
-            return true;
-          }
-
-          document.getElementById("adoptions-table").innerHTML = `
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Pet ID</th>
-                  <th>Adopter Name</th>
-                  <th>Phone</th>
-                  <th>Status</th>
-                  <th>Message</th>
-                  <th>Actions</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${adoptions
-                  .map(
-                    (adoption, index) => `
-                  <tr>
-                    <td>${index + 1}</td>
-                    <td>${adoption.petId}</td>
-                    <td>${adoption.adopterName}</td>
-                    <td>${adoption.phone}</td>
-                    <td><span class="badge badge-${adoption.status === "Pending" ? "warning" : adoption.status === "Approved" ? "success" : "info"}">${adoption.status}</span></td>
-                    <td>
-                      ${adoption.message ? `${adoption.message.substring(0, 48)}${adoption.message.length > 48 ? "..." : ""}` : '<span class="text-gray-400">-</span>'}
-                    </td>
-                    <td>
-                      <button class="btn btn-secondary action-btn" onclick="openInquiryModal('${adoption.id}')">
-                        <i class="fas fa-eye"></i> Review
-                      </button>
-                    </td>
-                    <td>${new Date(adoption.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                `,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          `;
+          renderAdoptionsTable();
           markDashboardSynced();
           return true;
         } catch (error) {
@@ -2341,51 +2709,8 @@
             throw new Error(res.message || "Failed to load bookings");
           }
           const bookings = res.data || [];
-
-          if (!bookings || bookings.length === 0) {
-            document.getElementById("bookings-table").innerHTML =
-              '<p class="text-gray-500 text-center py-8">No bookings yet</p>';
-            markDashboardSynced();
-            return true;
-          }
-
           _bookingsCache = bookings;
-          document.getElementById("bookings-table").innerHTML = `
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Service ID</th>
-                  <th>Pet Name</th>
-                  <th>Owner</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${bookings
-                  .map(
-                    (b) => `
-                  <tr>
-                    <td>${b.id}</td>
-                    <td>${b.serviceId}</td>
-                    <td>${b.petName || "-"}</td>
-                    <td>${b.ownerName}</td>
-                    <td>${b.date || new Date(b.bookedAt).toLocaleDateString()}</td>
-                    <td><span class="badge badge-${b.status === "Pending" ? "warning" : "success"}">${b.status}</span></td>
-                    <td>
-                      <button class="btn btn-secondary action-btn" onclick="openBookingModal('${b.id}')">
-                        <i class="fas fa-eye"></i> Review
-                      </button>
-                    </td>
-                  </tr>
-                `,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          `;
+          renderBookingsTable();
           markDashboardSynced();
           return true;
         } catch (error) {
@@ -2404,49 +2729,8 @@
           if (!response.ok || !res.success) {
             throw new Error(res.message || "Failed to load donations");
           }
-          const donations = res.data || [];
-
-          if (!donations || donations.length === 0) {
-            document.getElementById("donations-table").innerHTML =
-              '<p class="text-gray-500 text-center py-8">No donations yet</p>';
-            markDashboardSynced();
-            return true;
-          }
-
-          document.getElementById("donations-table").innerHTML = `
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Donor Name</th>
-                  <th>Email</th>
-                  <th>Amount</th>
-                  <th>Payment Method</th>
-                  <th>Transaction ID</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${donations
-                  .map(
-                    (donation) => `
-                  <tr>
-                    <td>${donation.id}</td>
-                    <td>${donation.donorName}</td>
-                    <td>${donation.donorEmail}</td>
-                    <td>₹${donation.amount.toLocaleString()}</td>
-                    <td>${donation.paymentMethod}</td>
-                    <td>${donation.transactionId}</td>
-                    <td><span class="badge badge-${donation.status === "Completed" ? "success" : donation.status === "Pending" ? "warning" : "info"}">${donation.status}</span></td>
-                    <td>${new Date(donation.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                `,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          `;
+          _donationsCache = res.data || [];
+          renderDonationsTable();
           markDashboardSynced();
           return true;
         } catch (error) {
@@ -2464,48 +2748,8 @@
           if (!response.ok || !res.success) {
             throw new Error(res.message || "Failed to load contact messages");
           }
-          const messages = res.data || [];
-
-          if (!messages || messages.length === 0) {
-            document.getElementById("messages-table").innerHTML =
-              '<p class="text-gray-500 text-center py-8">No contact messages yet</p>';
-            markDashboardSynced();
-            return true;
-          }
-
-          _messagesCache = messages;
-          document.getElementById("messages-table").innerHTML = `
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Purpose</th>
-                  <th>Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${messages
-                  .map(
-                    (msg, index) => `
-                  <tr>
-                    <td>${index + 1}</td>
-                    <td>${msg.name || "-"}</td>
-                    <td>${msg.purpose || "-"}</td>
-                    <td>${msg.sentAt ? new Date(msg.sentAt).toLocaleDateString() : "-"}</td>
-                    <td>
-                      <button class="btn btn-secondary action-btn" onclick="openMessageModal(${index})">
-                        <i class="fas fa-eye"></i> View
-                      </button>
-                    </td>
-                  </tr>
-                `,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          `;
+          _messagesCache = res.data || [];
+          renderMessagesTable();
           markDashboardSynced();
           return true;
         } catch (error) {
