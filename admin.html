@@ -1003,6 +1003,13 @@
         padding: 1.25rem 1.3rem;
       }
 
+      .hero-panel-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
+        gap: 1rem;
+        align-items: start;
+      }
+
       .hero-panel h2 {
         font-size: clamp(1.8rem, 2.6vw, 2.4rem);
         margin: 0.55rem 0 0.45rem;
@@ -1022,8 +1029,8 @@
       }
 
       .hero-stat-grid {
-        grid-template-columns: repeat(3, minmax(0, 220px));
-        margin-top: 1rem;
+        grid-template-columns: 1fr;
+        margin-top: 0;
       }
 
       .hero-stat {
@@ -1033,10 +1040,16 @@
 
       .stat-card {
         padding: 1rem;
+        min-height: 158px;
       }
 
       .stat-card strong {
         font-size: 1.7rem;
+      }
+
+      .stat-card p {
+        font-size: 0.88rem;
+        line-height: 1.45;
       }
 
       .stat-icon {
@@ -1136,6 +1149,10 @@
           grid-template-columns: 1fr;
         }
 
+        .hero-panel-grid {
+          grid-template-columns: 1fr;
+        }
+
         .topbar-meta-grid {
           grid-template-columns: minmax(0, 1fr);
         }
@@ -1146,8 +1163,11 @@
           padding: 1rem;
         }
 
-        .hero-stat-grid,
         .topbar-meta-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-stat-grid {
           grid-template-columns: 1fr;
         }
       }
@@ -1271,16 +1291,32 @@
       <section id="overview" class="section active">
         <div class="mb-4">
           <article class="hero-panel">
-            <div>
-              <span class="eyebrow">
-                <i class="fas fa-chart-line"></i>
-                Overview
-              </span>
-              <h2>Today's snapshot</h2>
-              <p>
-                Review key rescue activity at a glance, then jump directly into
-                the queue that needs action.
-              </p>
+            <div class="hero-panel-grid">
+              <div>
+                <span class="eyebrow">
+                  <i class="fas fa-chart-line"></i>
+                  Overview
+                </span>
+                <h2>Today's snapshot</h2>
+                <p>
+                  Review key rescue activity at a glance, then jump directly into
+                  the queue that needs action.
+                </p>
+              </div>
+              <div class="hero-stat-grid">
+                <div class="hero-stat">
+                  <span>Available Pets</span>
+                  <strong id="overview-available-pets">0</strong>
+                </div>
+                <div class="hero-stat">
+                  <span>Vaccination Rate</span>
+                  <strong id="overview-vaccination-rate">0%</strong>
+                </div>
+                <div class="hero-stat">
+                  <span>Average Age</span>
+                  <strong id="overview-average-age">0y</strong>
+                </div>
+              </div>
             </div>
             <div class="hero-actions mt-5">
               <button
@@ -1296,25 +1332,11 @@
                 <i class="fas fa-rotate-right"></i> Refresh Overview
               </button>
             </div>
-            <div class="hero-stat-grid">
-              <div class="hero-stat">
-                <span>Available Pets</span>
-                <strong id="overview-available-pets">0</strong>
-              </div>
-              <div class="hero-stat">
-                <span>Vaccination Rate</span>
-                <strong id="overview-vaccination-rate">0%</strong>
-              </div>
-              <div class="hero-stat">
-                <span>Average Age</span>
-                <strong id="overview-average-age">0y</strong>
-              </div>
-            </div>
           </article>
         </div>
 
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 mb-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 mb-4">
           <div class="stat-card">
             <div class="stat-shell">
               <div>

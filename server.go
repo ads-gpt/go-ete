@@ -27,6 +27,7 @@ import (
 // 5. FUNCTIONS AND ERROR HANDLING
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrAccountNotFound    = errors.New("account does not exist")
 	ErrUserAlreadyExists  = errors.New("user already exists")
 	ErrTokenExpired       = errors.New("token has expired")
 	ErrPetNotFound        = errors.New("pet not found")
@@ -416,37 +417,40 @@ func validatePet(pet Pet) (bool, []string) {
 
 func calculateStatistics() map[string]interface{} {
 	stats := make(map[string]interface{})
-	stats["petsByStatus"] = statusCounts
+	petList, _ := loadPetsLive()
 
+	petsByStatus := make(map[string]int)
 	speciesCount := make(map[string]int)
-	for _, pet := range pets {
+	for _, pet := range petList {
+		petsByStatus[pet.Status]++
 		speciesCount[pet.Species]++
 	}
+	stats["petsByStatus"] = petsByStatus
 	stats["petsBySpecies"] = speciesCount
 
-	if len(pets) > 0 {
+	if len(petList) > 0 {
 		totalAge := 0
 		vaccinatedCount := 0
 
 		// 2. LOOPING
-		for _, pet := range pets {
+		for _, pet := range petList {
 			totalAge += pet.Age
 			if pet.IsVaccinated {
 				vaccinatedCount++
 			}
 		}
 
-		stats["averageAge"] = float64(totalAge) / float64(len(pets))
-		stats["vaccinationRate"] = float64(vaccinatedCount) / float64(len(pets)) * 100
+		stats["averageAge"] = float64(totalAge) / float64(len(petList))
+		stats["vaccinationRate"] = float64(vaccinatedCount) / float64(len(petList)) * 100
 	}
 
-	stats["totalPets"] = len(pets)
+	stats["totalPets"] = len(petList)
 	stats["totalServices"] = len(services)
-	stats["totalBookings"] = len(bookings)
-	stats["totalMessages"] = len(contactMessages)
-	stats["totalDonations"] = len(donations)
-	stats["totalInquiries"] = len(inquiries)
-	stats["totalUsers"] = len(users)
+	stats["totalBookings"] = countDocumentsLive(bookingsColl(), len(bookings))
+	stats["totalMessages"] = countDocumentsLive(contactsColl(), len(contactMessages))
+	stats["totalDonations"] = countDocumentsLive(donationsColl(), len(donations))
+	stats["totalInquiries"] = countDocumentsLive(inquiriesColl(), len(inquiries))
+	stats["totalUsers"] = countDocumentsLive(usersColl(), len(users))
 
 	return stats
 }
@@ -523,6 +527,13 @@ func checkPassword(hashed, plain string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hashed), []byte(plain)) == nil
 }
 
+func isUserAdmin(user *User) bool {
+	if user == nil {
+		return false
+	}
+	return user.IsAdmin || strings.EqualFold(strings.TrimSpace(user.Role), "admin")
+}
+
 func generateToken(userID string) string {
 	expiresAt := time.Now().Add(authTokenTTL)
 	claims := jwt.RegisteredClaims{
@@ -580,7 +591,13 @@ func Login(email, password string) (*AuthToken, error) {
 
 	email = strings.TrimSpace(strings.ToLower(email))
 	user, err := getUserByEmailLive(email)
-	if err != nil || !checkPassword(user.Password, password) {
+	if err != nil {
+		if errors.Is(err, ErrAccountNotFound) {
+			return nil, ErrAccountNotFound
+		}
+		return nil, ErrInvalidCredentials
+	}
+	if !checkPassword(user.Password, password) {
 		return nil, ErrInvalidCredentials
 	}
 
@@ -589,7 +606,7 @@ func Login(email, password string) (*AuthToken, error) {
 		UserID:    user.ID,
 		ExpiresAt: time.Now().Add(authTokenTTL),
 		Role:      user.Role,
-		IsAdmin:   user.IsAdmin,
+		IsAdmin:   isUserAdmin(user),
 		Username:  user.Username,
 		Email:     user.Email,
 	}
@@ -624,6 +641,9 @@ func ValidateToken(tokenStr string) (*User, error) {
 
 	user, err := getUserByIDLive(userID)
 	if err != nil {
+		if errors.Is(err, ErrAccountNotFound) {
+			return nil, ErrInvalidCredentials
+		}
 		return nil, ErrInvalidCredentials
 	}
 
@@ -640,7 +660,11 @@ func getUserByEmailLive(email string) (*User, error) {
 		var user User
 		err := usersColl().FindOne(ctx, bson.M{"email": email}).Decode(&user)
 		if err == nil {
+			user.IsAdmin = isUserAdmin(&user)
 			return &user, nil
+		}
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrAccountNotFound
 		}
 		if !errors.Is(err, mongo.ErrNoDocuments) {
 			log.Printf("[WARN] Live user lookup by email failed for %s: %v", email, err)
@@ -651,9 +675,10 @@ func getUserByEmailLive(email string) (*User, error) {
 	defer mu.Unlock()
 	user, exists := usersByEmail[email]
 	if !exists {
-		return nil, ErrInvalidCredentials
+		return nil, ErrAccountNotFound
 	}
 	userCopy := *user
+	userCopy.IsAdmin = isUserAdmin(&userCopy)
 	return &userCopy, nil
 }
 
@@ -665,7 +690,11 @@ func getUserByIDLive(userID string) (*User, error) {
 		var user User
 		err := usersColl().FindOne(ctx, bson.M{"id": userID}).Decode(&user)
 		if err == nil {
+			user.IsAdmin = isUserAdmin(&user)
 			return &user, nil
+		}
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrAccountNotFound
 		}
 		if !errors.Is(err, mongo.ErrNoDocuments) {
 			log.Printf("[WARN] Live user lookup by id failed for %s: %v", userID, err)
@@ -677,10 +706,11 @@ func getUserByIDLive(userID string) (*User, error) {
 	for i := range users {
 		if users[i].ID == userID {
 			userCopy := users[i]
+			userCopy.IsAdmin = isUserAdmin(&userCopy)
 			return &userCopy, nil
 		}
 	}
-	return nil, ErrInvalidCredentials
+	return nil, ErrAccountNotFound
 }
 
 func requireAdmin(w http.ResponseWriter, r *http.Request) (*User, bool) {
@@ -697,7 +727,7 @@ func requireAdmin(w http.ResponseWriter, r *http.Request) (*User, bool) {
 		return nil, false
 	}
 
-	if !user.IsAdmin && strings.ToLower(user.Role) != "admin" {
+	if !isUserAdmin(user) {
 		respondError(w, http.StatusForbidden, "Admin access required")
 		return nil, false
 	}
@@ -1032,6 +1062,71 @@ func inquiriesColl() *mongo.Collection {
 	return mongoDB.Collection("inquiries")
 }
 
+func loadPetsLive() ([]Pet, error) {
+	if coll := petsColl(); coll != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		cur, err := coll.Find(ctx, bson.D{})
+		if err == nil {
+			var result []Pet
+			if err := cur.All(ctx, &result); err == nil {
+				if result == nil {
+					result = []Pet{}
+				}
+				return result, nil
+			}
+		}
+		log.Printf("[WARN] Live pet lookup failed, falling back to in-memory cache")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	result := make([]Pet, len(pets))
+	copy(result, pets)
+	return result, nil
+}
+
+func getPetByIDLive(petID string) (*Pet, error) {
+	if coll := petsColl(); coll != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		var pet Pet
+		err := coll.FindOne(ctx, bson.M{"id": petID}).Decode(&pet)
+		if err == nil {
+			return &pet, nil
+		}
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrPetNotFound
+		}
+		log.Printf("[WARN] Live pet lookup by id failed for %s, falling back to in-memory cache: %v", petID, err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	pet, exists := petsByID[petID]
+	if !exists {
+		return nil, ErrPetNotFound
+	}
+	petCopy := *pet
+	return &petCopy, nil
+}
+
+func countDocumentsLive(coll *mongo.Collection, fallback int) int {
+	if coll != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		count, err := coll.CountDocuments(ctx, bson.D{})
+		if err == nil {
+			return int(count)
+		}
+		log.Printf("[WARN] Live count query failed, falling back to in-memory cache: %v", err)
+	}
+	return fallback
+}
+
 func syncPetToDB(pet Pet) {
 	if petsColl() == nil {
 		return
@@ -1178,8 +1273,10 @@ func loadFromMongoDB() {
 			usersByEmail = make(map[string]*User)
 			hasAdmin := false
 			for i := range users {
+				users[i].Email = strings.TrimSpace(strings.ToLower(users[i].Email))
+				users[i].IsAdmin = isUserAdmin(&users[i])
 				usersByEmail[users[i].Email] = &users[i]
-				if users[i].IsAdmin {
+				if isUserAdmin(&users[i]) {
 					hasAdmin = true
 				}
 			}
@@ -1294,10 +1391,7 @@ func SearchPets(query string, filters []Filterable) ([]Pet, error) {
 		return nil, errors.New("search query or filters required")
 	}
 
-	mu.Lock()
-	petsCopy := make([]Pet, len(pets))
-	copy(petsCopy, pets)
-	mu.Unlock()
+	petsCopy, _ := loadPetsLive()
 
 	var result []Pet
 	if query != "" {
@@ -1450,6 +1544,7 @@ func getPetsHandler(w http.ResponseWriter, r *http.Request) {
 	search := query.Get("q")
 
 	var result []Pet
+	petList, _ := loadPetsLive()
 
 	// 2. CONTROL FLOW
 	if search != "" {
@@ -1463,10 +1558,10 @@ func getPetsHandler(w http.ResponseWriter, r *http.Request) {
 		var err error
 		result, err = SearchPets(search, filters)
 		if err != nil {
-			result = pets
+			result = petList
 		}
 	} else if species == "" && status == "" {
-		result = pets
+		result = petList
 	} else {
 		var filters []Filterable
 		if species != "" {
@@ -1475,7 +1570,7 @@ func getPetsHandler(w http.ResponseWriter, r *http.Request) {
 		if status != "" {
 			filters = append(filters, StatusFilter{Status: status})
 		}
-		result = ApplyFilters(pets, filters)
+		result = ApplyFilters(petList, filters)
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
@@ -1489,10 +1584,8 @@ func getPetByIDHandler(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/api/pets/")
 	petID := path
 
-	pet, exists := petsByID[petID]
-
-	// 2. CONTROL FLOW
-	if !exists {
+	pet, err := getPetByIDLive(petID)
+	if err != nil {
 		respondError(w, http.StatusNotFound, "Pet not found")
 		return
 	}
@@ -1989,6 +2082,10 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	// 5. FUNCTIONS AND ERROR HANDLING
 	token, err := Login(req.Email, req.Password)
 	if err != nil {
+		if errors.Is(err, ErrAccountNotFound) {
+			respondError(w, http.StatusNotFound, "Account does not exist. Please sign up first.")
+			return
+		}
 		if errors.Is(err, ErrTokenGeneration) {
 			respondError(w, http.StatusInternalServerError, "Failed to issue auth token")
 			return
@@ -2025,7 +2122,7 @@ func meHandler(w http.ResponseWriter, r *http.Request) {
 			"email":     user.Email,
 			"username":  user.Username,
 			"role":      user.Role,
-			"isadmin":   user.IsAdmin,
+			"isadmin":   isUserAdmin(user),
 			"createdAt": user.CreatedAt,
 		},
 	})

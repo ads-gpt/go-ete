@@ -534,28 +534,26 @@
       const tabBtns = document.querySelectorAll(".tab-btn");
       const tabContents = document.querySelectorAll(".tab-content");
 
+      function switchAuthTab(targetTab) {
+        tabBtns.forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.tab === targetTab);
+        });
+
+        tabContents.forEach((content) => {
+          content.classList.toggle("active", content.id === `${targetTab}-tab`);
+        });
+
+        document
+          .querySelectorAll('[id$="-error"]')
+          .forEach((el) => el.classList.add("hidden"));
+        document
+          .querySelectorAll('[id$="-success"]')
+          .forEach((el) => el.classList.add("hidden"));
+      }
+
       tabBtns.forEach((btn) => {
         btn.addEventListener("click", () => {
-          const targetTab = btn.dataset.tab;
-
-          // Update active states
-          tabBtns.forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-
-          tabContents.forEach((content) => {
-            content.classList.remove("active");
-            if (content.id === `${targetTab}-tab`) {
-              content.classList.add("active");
-            }
-          });
-
-          // Clear any error messages
-          document
-            .querySelectorAll('[id$="-error"]')
-            .forEach((el) => el.classList.add("hidden"));
-          document
-            .querySelectorAll('[id$="-success"]')
-            .forEach((el) => el.classList.add("hidden"));
+          switchAuthTab(btn.dataset.tab);
         });
       });
 
@@ -585,6 +583,7 @@
 
         const loginError = document.getElementById("login-error");
         loginError.classList.add("hidden");
+        loginError.innerHTML = "";
 
         const formData = {
           email: document.getElementById("login-email").value,
@@ -620,8 +619,29 @@
               ? "admin.html"
               : "dashboard.html";
           } else {
-            loginError.textContent =
-              data.error || "Invalid credentials. Please try again.";
+            if (response.status === 404) {
+              loginError.innerHTML = `
+                <div class="mb-3">Account does not exist. Please sign up first.</div>
+                <button
+                  type="button"
+                  id="promote-signup-btn"
+                  class="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-200"
+                >
+                  <i class="fas fa-user-plus"></i>
+                  Create account
+                </button>
+              `;
+              const registerEmail = document.getElementById("register-email");
+              if (registerEmail) {
+                registerEmail.value = formData.email;
+              }
+              document
+                .getElementById("promote-signup-btn")
+                .addEventListener("click", () => switchAuthTab("register"));
+            } else {
+              loginError.textContent =
+                data.error || "Invalid credentials. Please try again.";
+            }
             loginError.classList.remove("hidden");
           }
         } catch (error) {

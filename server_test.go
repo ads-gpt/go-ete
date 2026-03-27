@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 )
 
 // 9. UNIT TEST CASES
@@ -85,13 +86,41 @@ func TestLogin(t *testing.T) {
 	}
 
 	_, err = Login("notfound@example.com", "mypassword")
-	if err != ErrInvalidCredentials {
-		t.Errorf("expected ErrInvalidCredentials, got %v", err)
+	if err != ErrAccountNotFound {
+		t.Errorf("expected ErrAccountNotFound, got %v", err)
 	}
 
 	_, err = Login("", "")
 	if err != ErrInvalidCredentials {
 		t.Errorf("expected ErrInvalidCredentials, got %v", err)
+	}
+}
+
+func TestLoginTreatsAdminRoleAsAdmin(t *testing.T) {
+	initializeData()
+
+	adminLikeUser := User{
+		ID:        "usr-role-admin",
+		Email:     "roleadmin@example.com",
+		Username:  "roleadmin",
+		Password:  hashPassword("secret123"),
+		Role:      "admin",
+		IsAdmin:   false,
+		CreatedAt: time.Now(),
+		IsActive:  true,
+	}
+
+	mu.Lock()
+	users = append(users, adminLikeUser)
+	usersByEmail[adminLikeUser.Email] = &users[len(users)-1]
+	mu.Unlock()
+
+	token, err := Login("roleadmin@example.com", "secret123")
+	if err != nil {
+		t.Fatalf("Login failed: %v", err)
+	}
+	if !token.IsAdmin {
+		t.Fatal("expected role=admin user to be treated as admin")
 	}
 }
 
