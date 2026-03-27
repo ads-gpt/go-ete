@@ -455,8 +455,16 @@
         font-family: "Manrope", sans-serif;
         color: var(--dark);
         background:
-          radial-gradient(circle at top left, rgba(199, 133, 67, 0.16), transparent 26%),
-          radial-gradient(circle at 85% 18%, rgba(49, 85, 71, 0.14), transparent 20%),
+          radial-gradient(
+            circle at top left,
+            rgba(199, 133, 67, 0.16),
+            transparent 26%
+          ),
+          radial-gradient(
+            circle at 85% 18%,
+            rgba(49, 85, 71, 0.14),
+            transparent 20%
+          ),
           linear-gradient(180deg, #f8f2e9 0%, #f3ecdf 50%, #eee4d5 100%);
         min-height: 100vh;
       }
@@ -469,7 +477,11 @@
           linear-gradient(rgba(112, 86, 53, 0.035) 1px, transparent 1px),
           linear-gradient(90deg, rgba(112, 86, 53, 0.035) 1px, transparent 1px);
         background-size: 32px 32px;
-        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.46), transparent 82%);
+        mask-image: linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0.46),
+          transparent 82%
+        );
         pointer-events: none;
         z-index: -1;
       }
@@ -490,8 +502,16 @@
         padding: 1.3rem;
         border-radius: 32px;
         background:
-          radial-gradient(circle at top left, rgba(255, 215, 157, 0.14), transparent 26%),
-          linear-gradient(180deg, rgba(43, 31, 20, 0.98), rgba(28, 20, 13, 0.98));
+          radial-gradient(
+            circle at top left,
+            rgba(255, 215, 157, 0.14),
+            transparent 26%
+          ),
+          linear-gradient(
+            180deg,
+            rgba(43, 31, 20, 0.98),
+            rgba(28, 20, 13, 0.98)
+          );
         box-shadow: 0 26px 55px rgba(28, 19, 10, 0.34);
       }
 
@@ -659,7 +679,11 @@
         width: 16rem;
         height: 16rem;
         border-radius: 999px;
-        background: radial-gradient(circle, rgba(199, 133, 67, 0.14), transparent 65%);
+        background: radial-gradient(
+          circle,
+          rgba(199, 133, 67, 0.14),
+          transparent 65%
+        );
       }
 
       .hero-panel > * {
@@ -738,7 +762,11 @@
         align-items: center;
         justify-content: center;
         color: #fff7ef;
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        background: linear-gradient(
+          135deg,
+          var(--primary),
+          var(--primary-dark)
+        );
       }
 
       .panel-surface {
@@ -905,7 +933,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        transition: background 0.18s ease, opacity 0.18s ease;
+        transition:
+          background 0.18s ease,
+          opacity 0.18s ease;
       }
 
       .page-btn:hover:not(:disabled) {
@@ -929,7 +959,11 @@
       }
 
       .btn-primary {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        background: linear-gradient(
+          135deg,
+          var(--primary),
+          var(--primary-dark)
+        );
       }
 
       .btn-secondary {
@@ -952,7 +986,11 @@
 
       .modal {
         border-radius: 28px;
-        background: linear-gradient(180deg, rgba(255, 251, 245, 0.99), rgba(247, 239, 229, 0.96));
+        background: linear-gradient(
+          180deg,
+          rgba(255, 251, 245, 0.99),
+          rgba(247, 239, 229, 0.96)
+        );
       }
 
       .form-group input,
@@ -1001,8 +1039,7 @@
 
       /* Layout refinement */
       body {
-        background:
-          linear-gradient(180deg, #f6efe5 0%, #f1e8db 100%);
+        background: linear-gradient(180deg, #f6efe5 0%, #f1e8db 100%);
       }
 
       body::before {
@@ -1291,7 +1328,13 @@
         <div class="flex items-center gap-3 mb-4">
           <div
             class="w-14 h-14 rounded-[1.2rem] bg-white/10 flex items-center justify-center"
-            style="background: linear-gradient(135deg, rgba(199, 133, 67, 0.95), rgba(157, 93, 35, 0.95))"
+            style="
+              background: linear-gradient(
+                135deg,
+                rgba(199, 133, 67, 0.95),
+                rgba(157, 93, 35, 0.95)
+              );
+            "
           >
             <i class="fas fa-paw text-2xl text-white"></i>
           </div>
@@ -1345,17 +1388,31 @@
             <small>Visitor contact queue</small>
           </span>
         </a>
+        <a href="#" class="nav-item" data-section="sessions">
+          <span class="nav-icon"><i class="fas fa-user-shield"></i></span>
+          <span class="nav-copy">
+            <strong>Sessions</strong>
+            <small>Active user sessions</small>
+          </span>
+        </a>
       </nav>
 
       <div class="sidebar-footer mt-auto space-y-4">
-        <div class="sidebar-quick rounded-3xl border border-white/10 bg-white/5 p-4">
-          <div class="text-[0.68rem] font-bold uppercase tracking-[0.22em] text-white/50 mb-2">
+        <div
+          class="sidebar-quick rounded-3xl border border-white/10 bg-white/5 p-4"
+        >
+          <div
+            class="text-[0.68rem] font-bold uppercase tracking-[0.22em] text-white/50 mb-2"
+          >
             Quick Route
           </div>
           <button
             type="button"
             class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-            onclick="activateSection('pets'); openPetModal()"
+            onclick="
+              activateSection('pets');
+              openPetModal();
+            "
           >
             <i class="fas fa-plus mr-2"></i>Add a new pet record
           </button>
@@ -1410,13 +1467,13 @@
                 </span>
                 <h2>Today's snapshot</h2>
                 <p>
-                  Review key rescue activity at a glance, then jump directly into
-                  the queue that needs action.
+                  Review key rescue activity at a glance, then jump directly
+                  into the queue that needs action.
                 </p>
                 <div class="hero-stat-grid">
                   <div class="hero-stat">
-                    <span>Total Pets</span>
-                    <strong id="overview-total-pets">0</strong>
+                    <span>Available Pets</span>
+                    <strong id="overview-available-pets">0</strong>
                   </div>
                   <div class="hero-stat">
                     <span>Vaccination Rate</span>
@@ -1431,7 +1488,10 @@
             </div>
             <div class="hero-actions mt-5">
               <button
-                onclick="activateSection('pets'); openPetModal()"
+                onclick="
+                  activateSection('pets');
+                  openPetModal();
+                "
                 class="btn btn-primary"
               >
                 <i class="fas fa-plus"></i> Add Pet
@@ -1447,13 +1507,17 @@
         </div>
 
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 mb-4">
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 mb-4"
+        >
           <div class="stat-card">
             <div class="stat-shell">
               <div>
                 <span>Total Pets</span>
                 <strong id="stat-pets">0</strong>
-                <p class="mt-2 text-sm text-stone-500">All active pet records</p>
+                <p class="mt-2 text-sm text-stone-500">
+                  All active pet records
+                </p>
               </div>
               <div class="stat-icon"><i class="fas fa-paw"></i></div>
             </div>
@@ -1464,7 +1528,9 @@
               <div>
                 <span>Adoption Inquiries</span>
                 <strong id="stat-adoptions">0</strong>
-                <p class="mt-2 text-sm text-stone-500">Requests awaiting review</p>
+                <p class="mt-2 text-sm text-stone-500">
+                  Requests awaiting review
+                </p>
               </div>
               <div class="stat-icon"><i class="fas fa-home"></i></div>
             </div>
@@ -1475,7 +1541,9 @@
               <div>
                 <span>Service Bookings</span>
                 <strong id="stat-bookings">0</strong>
-                <p class="mt-2 text-sm text-stone-500">Upcoming care appointments</p>
+                <p class="mt-2 text-sm text-stone-500">
+                  Upcoming care appointments
+                </p>
               </div>
               <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
             </div>
@@ -1486,7 +1554,9 @@
               <div>
                 <span>Total Users</span>
                 <strong id="stat-users">0</strong>
-                <p class="mt-2 text-sm text-stone-500">Registered community accounts</p>
+                <p class="mt-2 text-sm text-stone-500">
+                  Registered community accounts
+                </p>
               </div>
               <div class="stat-icon"><i class="fas fa-users"></i></div>
             </div>
@@ -1497,7 +1567,9 @@
               <div>
                 <span>Donations</span>
                 <strong id="stat-donations">0</strong>
-                <p class="mt-2 text-sm text-stone-500">Recorded contributions</p>
+                <p class="mt-2 text-sm text-stone-500">
+                  Recorded contributions
+                </p>
               </div>
               <div class="stat-icon"><i class="fas fa-heart"></i></div>
             </div>
@@ -1508,7 +1580,9 @@
               <div>
                 <span>Under Care</span>
                 <strong id="overview-under-care">0</strong>
-                <p class="mt-2 text-sm text-stone-500">Pets in treatment or recovery</p>
+                <p class="mt-2 text-sm text-stone-500">
+                  Pets in treatment or recovery
+                </p>
               </div>
               <div class="stat-icon"><i class="fas fa-stethoscope"></i></div>
             </div>
@@ -1537,35 +1611,59 @@
               navigation.
             </p>
             <div class="utility-actions">
-              <button type="button" class="quick-action" onclick="activateSection('adoptions')">
+              <button
+                type="button"
+                class="quick-action"
+                onclick="activateSection('adoptions')"
+              >
                 Review adoption queue <i class="fas fa-arrow-right"></i>
               </button>
-              <button type="button" class="quick-action" onclick="activateSection('bookings')">
+              <button
+                type="button"
+                class="quick-action"
+                onclick="activateSection('bookings')"
+              >
                 Inspect bookings <i class="fas fa-arrow-right"></i>
               </button>
-              <button type="button" class="quick-action" onclick="activateSection('messages')">
+              <button
+                type="button"
+                class="quick-action"
+                onclick="activateSection('messages')"
+              >
                 Open contact messages <i class="fas fa-arrow-right"></i>
               </button>
             </div>
             <div class="space-y-4 mt-6">
-              <div class="flex items-end justify-between gap-3 border-b border-stone-200/70 pb-3">
+              <div
+                class="flex items-end justify-between gap-3 border-b border-stone-200/70 pb-3"
+              >
                 <div>
                   <span class="section-chip">Last Sync</span>
-                  <strong class="block text-xl mt-1" id="overview-last-sync">Waiting</strong>
+                  <strong class="block text-xl mt-1" id="overview-last-sync"
+                    >Waiting</strong
+                  >
                 </div>
                 <i class="fas fa-clock text-stone-400"></i>
               </div>
-              <div class="flex items-end justify-between gap-3 border-b border-stone-200/70 pb-3">
+              <div
+                class="flex items-end justify-between gap-3 border-b border-stone-200/70 pb-3"
+              >
                 <div>
                   <span class="section-chip">Pending Inquiries</span>
-                  <strong class="block text-xl mt-1" id="overview-pending-inquiries">0</strong>
+                  <strong
+                    class="block text-xl mt-1"
+                    id="overview-pending-inquiries"
+                    >0</strong
+                  >
                 </div>
                 <i class="fas fa-inbox text-stone-400"></i>
               </div>
               <div class="flex items-end justify-between gap-3">
                 <div>
                   <span class="section-chip">Console Owner</span>
-                  <strong class="block text-xl mt-1" id="admin-username-card">Administrator</strong>
+                  <strong class="block text-xl mt-1" id="admin-username-card"
+                    >Administrator</strong
+                  >
                 </div>
                 <i class="fas fa-user-shield text-stone-400"></i>
               </div>
@@ -1576,7 +1674,9 @@
 
       <!-- Pets Section -->
       <section id="pets" class="section">
-        <div class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div
+          class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4"
+        >
           <div>
             <span class="section-chip">Pet Registry</span>
             <h1 class="text-4xl font-bold mb-2">Manage Pets</h1>
@@ -1605,7 +1705,9 @@
 
       <!-- Adoptions Section -->
       <section id="adoptions" class="section">
-        <div class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div
+          class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4"
+        >
           <div>
             <span class="section-chip">Adoption Queue</span>
             <h1 class="text-4xl font-bold mb-2">Adoption Inquiries</h1>
@@ -1631,7 +1733,9 @@
 
       <!-- Bookings Section -->
       <section id="bookings" class="section">
-        <div class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div
+          class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4"
+        >
           <div>
             <span class="section-chip">Service Desk</span>
             <h1 class="text-4xl font-bold mb-2">Service Bookings</h1>
@@ -1657,7 +1761,9 @@
 
       <!-- Donations Section -->
       <section id="donations" class="section">
-        <div class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div
+          class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4"
+        >
           <div>
             <span class="section-chip">Support Ledger</span>
             <h1 class="text-4xl font-bold mb-2">Donations</h1>
@@ -1683,7 +1789,9 @@
 
       <!-- Messages Section -->
       <section id="messages" class="section">
-        <div class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div
+          class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4"
+        >
           <div>
             <span class="section-chip">Inbox</span>
             <h1 class="text-4xl font-bold mb-2">Contact Messages</h1>
@@ -1707,6 +1815,32 @@
             <p class="text-gray-500 text-center py-8">
               Contact messages will be displayed here
             </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sessions Section -->
+      <section id="sessions" class="section">
+        <div
+          class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4"
+        >
+          <div>
+            <span class="section-chip">Security</span>
+            <h1 class="text-4xl font-bold mb-2">Active Sessions</h1>
+            <p>
+              View currently active sessions and revoke compromised sessions immediately.
+            </p>
+          </div>
+          <div class="section-toolbar">
+            <button class="btn-refresh" onclick="refreshSection('sessions', this)">
+              <i class="fas fa-rotate-right"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <div id="sessions-table">
+            <p class="text-gray-500 text-center py-8">Active sessions will be displayed here</p>
           </div>
         </div>
       </section>
@@ -1841,7 +1975,13 @@
         <h3 class="font-semibold mb-2 mt-4">Message</h3>
         <div class="inquiry-message mb-5" id="message-modal-body">-</div>
         <div class="flex justify-end">
-          <button type="button" class="btn btn-secondary" onclick="closeMessageModal()">Close</button>
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="closeMessageModal()"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>
@@ -1863,7 +2003,13 @@
         <h3 class="font-semibold mb-2 mt-4">Notes</h3>
         <div class="inquiry-message mb-5" id="booking-modal-notes">-</div>
         <div class="flex justify-end">
-          <button type="button" class="btn btn-secondary" onclick="closeBookingModal()">Close</button>
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="closeBookingModal()"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>
@@ -1916,6 +2062,7 @@
       let _bookingsCache = [];
       let _donationsCache = [];
       let _messagesCache = [];
+      let _adminSessionsCache = [];
       let _activeInquiryId = "";
       let _statusUpdateInFlight = false;
       const DEFAULT_PAGE_SIZE = 15;
@@ -2019,16 +2166,97 @@
         return localStorage.getItem("authToken") || "";
       }
 
-      function authFetch(url, options = {}) {
+      function getRefreshToken() {
+        return localStorage.getItem("refreshToken") || "";
+      }
+
+      function persistAuthSession(tokenData = {}) {
+        if (tokenData.token) {
+          localStorage.setItem("authToken", tokenData.token);
+        }
+        if (tokenData.refreshToken) {
+          localStorage.setItem("refreshToken", tokenData.refreshToken);
+        }
+        if (tokenData.sessionId) {
+          localStorage.setItem("sessionId", tokenData.sessionId);
+        }
+        if (tokenData.userId) {
+          localStorage.setItem("userId", tokenData.userId);
+        }
+        if (tokenData.role) {
+          localStorage.setItem("userRole", tokenData.role);
+        }
+        if (typeof tokenData.isadmin === "boolean") {
+          localStorage.setItem("isAdmin", tokenData.isadmin ? "true" : "false");
+        }
+        if (tokenData.username) {
+          localStorage.setItem("username", tokenData.username);
+        }
+        if (tokenData.email) {
+          localStorage.setItem("userEmail", tokenData.email);
+        }
+      }
+
+      function clearAuthSession() {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("sessionId");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("userRole");
+        localStorage.removeItem("isAdmin");
+        localStorage.removeItem("username");
+        localStorage.removeItem("userEmail");
+      }
+
+      async function refreshAccessToken() {
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) {
+          return false;
+        }
+
+        try {
+          const response = await fetch("/api/auth/refresh", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Device-Info": navigator.userAgent || "web-admin",
+            },
+            body: JSON.stringify({
+              refreshToken,
+              deviceInfo: navigator.userAgent || "web-admin",
+            }),
+          });
+          const body = await response.json();
+          if (!response.ok || !body.success || !body.data?.token) {
+            return false;
+          }
+
+          persistAuthSession(body.data);
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      async function authFetch(url, options = {}, hasRetried = false) {
         const token = getAuthToken();
         const headers = Object.assign({}, options.headers || {});
         if (token) {
           headers.Authorization = `Bearer ${token}`;
         }
-        return fetch(
+        const response = await fetch(
           url,
           Object.assign({ cache: "no-store" }, options, { headers }),
         );
+
+        if (response.status === 401 && !hasRetried) {
+          const refreshed = await refreshAccessToken();
+          if (refreshed) {
+            return authFetch(url, options, true);
+          }
+        }
+
+        return response;
       }
 
       function showToast(message, type = "success") {
@@ -2058,11 +2286,11 @@
 
       function updateAdminIdentity(user = {}) {
         const username =
-          user.username ||
-          localStorage.getItem("username") ||
-          "Administrator";
+          user.username || localStorage.getItem("username") || "Administrator";
         const email =
-          user.email || localStorage.getItem("userEmail") || "admin@pawtner.com";
+          user.email ||
+          localStorage.getItem("userEmail") ||
+          "admin@pawtner.com";
 
         setTextIfPresent("admin-username", username);
         setTextIfPresent("admin-username-card", username);
@@ -2090,7 +2318,10 @@
       }
 
       function getPageSizeChoices(activeSize) {
-        return [activeSize, ...PAGE_SIZE_OPTIONS.filter((size) => size !== activeSize)];
+        return [
+          activeSize,
+          ...PAGE_SIZE_OPTIONS.filter((size) => size !== activeSize),
+        ];
       }
 
       function getPaginationMeta(sectionKey, items) {
@@ -2210,8 +2441,11 @@
       async function enforceAdminAccess() {
         const token = getAuthToken();
         if (!token) {
-          window.location.href = "auth.html";
-          return false;
+          const refreshed = await refreshAccessToken();
+          if (!refreshed) {
+            window.location.href = "auth.html";
+            return false;
+          }
         }
 
         try {
@@ -2224,7 +2458,10 @@
           const isAdmin = payload.data.isadmin === true;
           localStorage.setItem("isAdmin", isAdmin ? "true" : "false");
           localStorage.setItem("userRole", payload.data.role || "user");
-          localStorage.setItem("username", payload.data.username || "Administrator");
+          localStorage.setItem(
+            "username",
+            payload.data.username || "Administrator",
+          );
           localStorage.setItem("userEmail", payload.data.email || "");
           updateAdminIdentity(payload.data);
 
@@ -2235,8 +2472,7 @@
 
           return true;
         } catch (_) {
-          localStorage.removeItem("authToken");
-          localStorage.removeItem("isAdmin");
+          clearAuthSession();
           window.location.href = "auth.html";
           return false;
         }
@@ -2280,13 +2516,13 @@
       });
 
       // Logout function
-      function logout() {
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("userId");
-        localStorage.removeItem("userRole");
-        localStorage.removeItem("isAdmin");
-        localStorage.removeItem("username");
-        localStorage.removeItem("userEmail");
+      async function logout() {
+        try {
+          await authFetch("/api/auth/logout", { method: "POST" });
+        } catch (_) {
+          // Ignore logout network errors and clear local session anyway.
+        }
+        clearAuthSession();
         window.location.href = "auth.html";
       }
 
@@ -2307,8 +2543,14 @@
           document.getElementById("stat-users").textContent =
             stats.totalUsers || 0;
           setTextIfPresent("stat-donations", stats.totalDonations || 0);
-          setTextIfPresent("overview-total-pets", stats.totalPets || 0);
-          setTextIfPresent("overview-under-care", petsByStatus["Under Care"] || 0);
+          setTextIfPresent(
+            "overview-available-pets",
+            petsByStatus.Available || 0,
+          );
+          setTextIfPresent(
+            "overview-under-care",
+            petsByStatus["Under Care"] || 0,
+          );
           setTextIfPresent("overview-adopted-pets", petsByStatus.Adopted || 0);
           setTextIfPresent(
             "overview-vaccination-rate",
@@ -2341,8 +2583,97 @@
             return await loadDonations();
           case "messages":
             return await loadMessages();
+          case "sessions":
+            return await loadAdminSessions();
           default:
             return false;
+        }
+      }
+
+      function renderSessionsTable() {
+        const target = document.getElementById("sessions-table");
+        const sessions = _adminSessionsCache || [];
+
+        if (!sessions.length) {
+          target.innerHTML =
+            '<p class="text-gray-500 text-center py-8">No active sessions found</p>';
+          return;
+        }
+
+        target.innerHTML = `
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Session ID</th>
+                <th>User</th>
+                <th>Device</th>
+                <th>Last Used</th>
+                <th>Expires</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sessions
+                .map(
+                  (session) => `
+                <tr>
+                  <td class="cell-tight" style="font-family:monospace;font-size:0.78rem;">${escapeHtml(session.sessionId || "-")}</td>
+                  <td><div class="cell-stack"><strong>${escapeHtml(session.username || "Unknown")}</strong><small>${escapeHtml(session.email || session.userId || "-")}</small></div></td>
+                  <td class="cell-muted">${escapeHtml(session.deviceInfo || "Unknown device")}</td>
+                  <td class="cell-tight">${session.lastUsedAt ? new Date(session.lastUsedAt).toLocaleString() : "-"}</td>
+                  <td class="cell-tight">${session.expiresAt ? new Date(session.expiresAt).toLocaleString() : "-"}</td>
+                  <td>
+                    <button class="btn btn-danger action-btn" onclick="revokeAdminSession('${session.sessionId}')">
+                      <i class="fas fa-ban"></i> Revoke
+                    </button>
+                  </td>
+                </tr>
+              `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+        `;
+      }
+
+      async function loadAdminSessions() {
+        try {
+          const response = await authFetch("/api/admin/sessions");
+          const res = await response.json();
+          if (!response.ok || !res.success) {
+            throw new Error(res.message || "Failed to load active sessions");
+          }
+          _adminSessionsCache = res.data || [];
+          renderSessionsTable();
+          markDashboardSynced();
+          return true;
+        } catch (error) {
+          console.error("Error loading admin sessions:", error);
+          document.getElementById("sessions-table").innerHTML =
+            '<p class="text-red-500 text-center py-8">Failed to load active sessions</p>';
+          return false;
+        }
+      }
+
+      async function revokeAdminSession(sessionID) {
+        if (!sessionID) return;
+        const confirmed = window.confirm("Revoke this session now?");
+        if (!confirmed) return;
+
+        try {
+          const response = await authFetch("/api/admin/sessions/revoke", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: sessionID }),
+          });
+          const res = await response.json();
+          if (!response.ok || !res.success) {
+            throw new Error(res.message || "Failed to revoke session");
+          }
+          await loadAdminSessions();
+          showToast("Session revoked");
+        } catch (error) {
+          showToast(`Error: ${error.message}`, "error");
         }
       }
 
@@ -2687,7 +3018,8 @@
           _adoptionsCache = adoptions;
           setTextIfPresent(
             "overview-pending-inquiries",
-            adoptions.filter((adoption) => adoption.status === "Pending").length,
+            adoptions.filter((adoption) => adoption.status === "Pending")
+              .length,
           );
           renderAdoptionsTable();
           markDashboardSynced();
@@ -2761,37 +3093,46 @@
       }
 
       function closeMessageModal() {
-        document.getElementById("message-modal-overlay").classList.remove("open");
+        document
+          .getElementById("message-modal-overlay")
+          .classList.remove("open");
       }
 
       function openMessageModal(index) {
         const msg = _messagesCache[index];
         if (!msg) return;
 
-        document.getElementById("message-modal-id").textContent = `Message #${index + 1}`;
+        document.getElementById("message-modal-id").textContent =
+          `Message #${index + 1}`;
         document.getElementById("message-modal-meta").innerHTML = `
           <div class="inquiry-meta-item"><span class="label">Name</span><span class="value">${msg.name || "-"}</span></div>
           <div class="inquiry-meta-item"><span class="label">Email</span><span class="value">${msg.email || "-"}</span></div>
           <div class="inquiry-meta-item"><span class="label">Purpose</span><span class="value">${msg.purpose || "-"}</span></div>
           <div class="inquiry-meta-item"><span class="label">Sent</span><span class="value">${msg.sentAt ? new Date(msg.sentAt).toLocaleString() : "-"}</span></div>
         `;
-        document.getElementById("message-modal-body").textContent = msg.message || "No message content.";
+        document.getElementById("message-modal-body").textContent =
+          msg.message || "No message content.";
         document.getElementById("message-modal-overlay").classList.add("open");
       }
 
-      document.getElementById("message-modal-overlay").addEventListener("click", function (e) {
-        if (e.target === this) closeMessageModal();
-      });
+      document
+        .getElementById("message-modal-overlay")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeMessageModal();
+        });
 
       function closeBookingModal() {
-        document.getElementById("booking-modal-overlay").classList.remove("open");
+        document
+          .getElementById("booking-modal-overlay")
+          .classList.remove("open");
       }
 
       function openBookingModal(bookingID) {
         const b = _bookingsCache.find((x) => x.id === bookingID);
         if (!b) return;
 
-        document.getElementById("booking-modal-id").textContent = `Booking ${b.id}`;
+        document.getElementById("booking-modal-id").textContent =
+          `Booking ${b.id}`;
         document.getElementById("booking-modal-meta").innerHTML = `
           <div class="inquiry-meta-item"><span class="label">Service</span><span class="value">${b.serviceId}</span></div>
           <div class="inquiry-meta-item"><span class="label">Status</span><span class="value">${b.status}</span></div>
@@ -2802,13 +3143,16 @@
           <div class="inquiry-meta-item"><span class="label">Date</span><span class="value">${b.date || "-"}</span></div>
           <div class="inquiry-meta-item"><span class="label">Time</span><span class="value">${b.time || "-"}</span></div>
         `;
-        document.getElementById("booking-modal-notes").textContent = b.notes || "No notes provided.";
+        document.getElementById("booking-modal-notes").textContent =
+          b.notes || "No notes provided.";
         document.getElementById("booking-modal-overlay").classList.add("open");
       }
 
-      document.getElementById("booking-modal-overlay").addEventListener("click", function (e) {
-        if (e.target === this) closeBookingModal();
-      });
+      document
+        .getElementById("booking-modal-overlay")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeBookingModal();
+        });
 
       function closeInquiryModal() {
         _activeInquiryId = "";

@@ -148,6 +148,230 @@ func TestValidateToken(t *testing.T) {
 	}
 }
 
+func TestLoginIssuesRefreshTokenAndSession(t *testing.T) {
+	initializeData()
+	Register("pair@example.com", "pairuser", "pairpass")
+
+	token, err := LoginWithDevice("pair@example.com", "pairpass", "test-device")
+	if err != nil {
+		t.Fatalf("LoginWithDevice failed: %v", err)
+	}
+	if token.Token == "" {
+		t.Fatal("expected access token")
+	}
+	if token.RefreshToken == "" {
+		t.Fatal("expected refresh token")
+	}
+	if token.SessionID == "" {
+		t.Fatal("expected session id")
+	}
+	if !token.RefreshExpiresAt.After(token.ExpiresAt) {
+		t.Fatal("expected refresh token to outlive access token")
+	}
+}
+
+func TestRefreshTokenRotation(t *testing.T) {
+	initializeData()
+	Register("refresh@example.com", "refreshuser", "refreshpass")
+
+	firstPair, err := LoginWithDevice("refresh@example.com", "refreshpass", "device-a")
+	if err != nil {
+		t.Fatalf("LoginWithDevice failed: %v", err)
+	}
+
+	body := bytes.NewBufferString(`{"refreshToken":"` + firstPair.RefreshToken + `","deviceInfo":"device-b"}`)
+	req := httptest.NewRequest("POST", "/api/auth/refresh", body)
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	refreshTokenHandler(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+
+	var resp map[string]interface{}
+	if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode refresh response: %v", err)
+	}
+	data := resp["data"].(map[string]interface{})
+	newRefreshToken, _ := data["refreshToken"].(string)
+	if newRefreshToken == "" {
+		t.Fatal("expected rotated refresh token")
+	}
+	if newRefreshToken == firstPair.RefreshToken {
+		t.Fatal("expected refresh token rotation")
+	}
+
+	oldBody := bytes.NewBufferString(`{"refreshToken":"` + firstPair.RefreshToken + `"}`)
+	oldReq := httptest.NewRequest("POST", "/api/auth/refresh", oldBody)
+	oldReq.Header.Set("Content-Type", "application/json")
+	oldRR := httptest.NewRecorder()
+	refreshTokenHandler(oldRR, oldReq)
+
+	if oldRR.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 for reused refresh token, got %d", oldRR.Code)
+	}
+}
+
+func TestLogoutRevokesCurrentSession(t *testing.T) {
+	initializeData()
+	Register("logout@example.com", "logoutuser", "logoutpass")
+
+	pair, err := LoginWithDevice("logout@example.com", "logoutpass", "logout-device")
+	if err != nil {
+		t.Fatalf("login failed: %v", err)
+	}
+
+	req := httptest.NewRequest("POST", "/api/auth/logout", nil)
+	req.Header.Set("Authorization", "Bearer "+pair.Token)
+	rr := httptest.NewRecorder()
+	logoutHandler(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+
+	if _, err := ValidateToken(pair.Token); err != ErrInvalidCredentials {
+		t.Fatalf("expected token to be invalid after logout, got %v", err)
+	}
+}
+
+func TestLogoutAllRevokesEverySessionForUser(t *testing.T) {
+	initializeData()
+	Register("logoutall@example.com", "logoutalluser", "logoutallpass")
+
+	first, err := LoginWithDevice("logoutall@example.com", "logoutallpass", "device-1")
+	if err != nil {
+		t.Fatalf("first login failed: %v", err)
+	}
+	second, err := LoginWithDevice("logoutall@example.com", "logoutallpass", "device-2")
+	if err != nil {
+		t.Fatalf("second login failed: %v", err)
+	}
+
+	req := httptest.NewRequest("POST", "/api/auth/logout-all", nil)
+	req.Header.Set("Authorization", "Bearer "+first.Token)
+	rr := httptest.NewRecorder()
+	logoutAllHandler(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+
+	if _, err := ValidateToken(first.Token); err != ErrInvalidCredentials {
+		t.Fatalf("expected first token invalid after logout-all, got %v", err)
+	}
+	if _, err := ValidateToken(second.Token); err != ErrInvalidCredentials {
+		t.Fatalf("expected second token invalid after logout-all, got %v", err)
+	}
+}
+
+func TestAdminCanRevokeUserSession(t *testing.T) {
+	initializeData()
+	Register("victim@example.com", "victim", "victimpass")
+
+	adminPair, err := LoginWithDevice("admin@pawtner.com", "admin123", "admin-device")
+	if err != nil {
+		t.Fatalf("admin login failed: %v", err)
+	}
+	victimPair, err := LoginWithDevice("victim@example.com", "victimpass", "victim-device")
+	if err != nil {
+		t.Fatalf("victim login failed: %v", err)
+	}
+
+	body := bytes.NewBufferString(`{"sessionId":"` + victimPair.SessionID + `"}`)
+	req := httptest.NewRequest("POST", "/api/admin/sessions/revoke", body)
+	req.Header.Set("Authorization", "Bearer "+adminPair.Token)
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	adminRevokeSessionHandler(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+	if _, err := ValidateToken(victimPair.Token); err != ErrInvalidCredentials {
+		t.Fatalf("expected victim token invalid after admin revoke, got %v", err)
+	}
+}
+
+func TestUserSessionsHandlerListsCurrentUsersActiveSessions(t *testing.T) {
+	initializeData()
+	Register("sessions-user@example.com", "sessuser", "sesspass")
+
+	first, err := LoginWithDevice("sessions-user@example.com", "sesspass", "device-1")
+	if err != nil {
+		t.Fatalf("first login failed: %v", err)
+	}
+	_, err = LoginWithDevice("sessions-user@example.com", "sesspass", "device-2")
+	if err != nil {
+		t.Fatalf("second login failed: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/api/auth/sessions", nil)
+	req.Header.Set("Authorization", "Bearer "+first.Token)
+	rr := httptest.NewRecorder()
+	userSessionsHandler(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+
+	var resp map[string]interface{}
+	if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode response failed: %v", err)
+	}
+	count, ok := resp["count"].(float64)
+	if !ok || int(count) < 2 {
+		t.Fatalf("expected at least 2 active sessions, got %#v", resp["count"])
+	}
+}
+
+func TestUserRevokeSessionHandlerRevokesOwnedSession(t *testing.T) {
+	initializeData()
+	Register("revoke-own@example.com", "revokeown", "revokepass")
+
+	current, err := LoginWithDevice("revoke-own@example.com", "revokepass", "device-current")
+	if err != nil {
+		t.Fatalf("current login failed: %v", err)
+	}
+	other, err := LoginWithDevice("revoke-own@example.com", "revokepass", "device-other")
+	if err != nil {
+		t.Fatalf("other login failed: %v", err)
+	}
+
+	body := bytes.NewBufferString(`{"sessionId":"` + other.SessionID + `"}`)
+	req := httptest.NewRequest("POST", "/api/auth/sessions/revoke", body)
+	req.Header.Set("Authorization", "Bearer "+current.Token)
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	userRevokeSessionHandler(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+	if _, err := ValidateToken(other.Token); err != ErrInvalidCredentials {
+		t.Fatalf("expected revoked session token invalid, got %v", err)
+	}
+}
+
+func TestAdminSessionsHandlerRequiresAdmin(t *testing.T) {
+	initializeData()
+	Register("plain@example.com", "plain", "plainpass")
+	plainToken, err := LoginWithDevice("plain@example.com", "plainpass", "plain-device")
+	if err != nil {
+		t.Fatalf("plain login failed: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/api/admin/sessions", nil)
+	req.Header.Set("Authorization", "Bearer "+plainToken.Token)
+	rr := httptest.NewRecorder()
+	adminSessionsHandler(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 for non-admin, got %d", rr.Code)
+	}
+}
+
 // Test pet CRUD operations, validation logic
 
 func TestValidatePet(t *testing.T) {

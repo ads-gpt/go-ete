@@ -566,6 +566,29 @@
           </div>
         </div>
 
+        <div class="info-card">
+          <h3>
+            <i
+              class="fas fa-user-shield"
+              style="color: var(--primary); margin-right: 0.5rem"
+            ></i
+            >Active Sessions
+          </h3>
+          <div id="my-sessions-list" style="display: flex; flex-direction: column; gap: 0.75rem">
+            <div class="skeleton" style="height: 52px"></div>
+            <div class="skeleton" style="height: 52px"></div>
+          </div>
+          <div style="margin-top: 1rem; display: flex; gap: 0.6rem; flex-wrap: wrap">
+            <button
+              type="button"
+              onclick="logoutAllSessions()"
+              style="border:1px solid #eadfce;background:#fff6ea;color:#8b5a2b;padding:0.45rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:600;cursor:pointer"
+            >
+              Sign out all sessions
+            </button>
+          </div>
+        </div>
+
         <!-- Tips section -->
         <div>
           <h2
@@ -653,22 +676,196 @@
     </main>
 
     <script>
-      // --- Auth guard ---
-      const authToken = localStorage.getItem("authToken");
-      if (!authToken) {
-        window.location.href = "auth.html";
-      } else if (localStorage.getItem("isAdmin") === "true") {
-        window.location.href = "admin.html";
+      function getAuthToken() {
+        return localStorage.getItem("authToken") || "";
       }
 
-      // --- Logout ---
-      function logout() {
+      function getRefreshToken() {
+        return localStorage.getItem("refreshToken") || "";
+      }
+
+      function persistAuthSession(tokenData = {}) {
+        if (tokenData.token) {
+          localStorage.setItem("authToken", tokenData.token);
+        }
+        if (tokenData.refreshToken) {
+          localStorage.setItem("refreshToken", tokenData.refreshToken);
+        }
+        if (tokenData.sessionId) {
+          localStorage.setItem("sessionId", tokenData.sessionId);
+        }
+        if (tokenData.userId) {
+          localStorage.setItem("userId", tokenData.userId);
+        }
+      }
+
+      function clearAuthSession() {
         localStorage.removeItem("authToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("sessionId");
         localStorage.removeItem("userId");
         localStorage.removeItem("userRole");
         localStorage.removeItem("isAdmin");
         localStorage.removeItem("username");
         localStorage.removeItem("userEmail");
+      }
+
+      async function refreshAccessToken() {
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) {
+          return false;
+        }
+
+        try {
+          const res = await fetch("/api/auth/refresh", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Device-Info": navigator.userAgent || "web-dashboard",
+            },
+            body: JSON.stringify({
+              refreshToken,
+              deviceInfo: navigator.userAgent || "web-dashboard",
+            }),
+          });
+          const body = await res.json();
+          if (!res.ok || !body.success || !body.data?.token) {
+            return false;
+          }
+
+          persistAuthSession(body.data);
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      async function authFetch(url, options = {}, hasRetried = false) {
+        const token = getAuthToken();
+        const headers = Object.assign({}, options.headers || {});
+        if (token) {
+          headers.Authorization = "Bearer " + token;
+        }
+
+        const res = await fetch(url, Object.assign({}, options, { headers }));
+        if (res.status === 401 && !hasRetried) {
+          const refreshed = await refreshAccessToken();
+          if (refreshed) {
+            return authFetch(url, options, true);
+          }
+        }
+        return res;
+      }
+
+      function renderMySessions(sessions) {
+        const container = document.getElementById("my-sessions-list");
+        if (!container) return;
+
+        if (!sessions || !sessions.length) {
+          container.innerHTML =
+            '<div style="font-size:0.85rem;color:#777;">No active sessions found.</div>';
+          return;
+        }
+
+        container.innerHTML = sessions
+          .map((session) => {
+            const lastUsed = session.lastUsedAt
+              ? new Date(session.lastUsedAt).toLocaleString()
+              : "-";
+            const device = session.deviceInfo || "Unknown device";
+            const currentBadge = session.isCurrent
+              ? '<span style="font-size:0.68rem;font-weight:700;color:#2e7d32;background:#eaf8ee;padding:0.18rem 0.5rem;border-radius:999px;">Current</span>'
+              : '<button type="button" onclick="revokeMySession(\'' +
+                String(session.sessionId || "") +
+                '\')" style="border:1px solid #f0d6d6;background:#fff3f3;color:#a33;padding:0.25rem 0.55rem;border-radius:999px;font-size:0.68rem;font-weight:700;cursor:pointer;">Revoke</button>';
+
+            return `
+              <div style="border:1px solid #ede3d6;background:#fff;padding:0.7rem 0.75rem;border-radius:12px;display:flex;align-items:flex-start;justify-content:space-between;gap:0.6rem;">
+                <div style="min-width:0;">
+                  <div style="font-size:0.78rem;font-weight:600;color:#47392a;word-break:break-word;">${device}</div>
+                  <div style="font-size:0.72rem;color:#8a7a66;margin-top:0.2rem;">Last used: ${lastUsed}</div>
+                </div>
+                <div>${currentBadge}</div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      async function loadMySessions() {
+        try {
+          const res = await authFetch("/api/auth/sessions");
+          const body = await res.json();
+          if (!res.ok || !body.success) {
+            throw new Error(body.message || "Failed to load active sessions");
+          }
+          renderMySessions(body.data || []);
+        } catch (error) {
+          const container = document.getElementById("my-sessions-list");
+          if (container) {
+            container.innerHTML =
+              '<div style="font-size:0.85rem;color:#c23;">Failed to load sessions.</div>';
+          }
+        }
+      }
+
+      async function revokeMySession(sessionID) {
+        if (!sessionID) return;
+        try {
+          const res = await authFetch("/api/auth/sessions/revoke", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: sessionID }),
+          });
+          const body = await res.json();
+          if (!res.ok || !body.success) {
+            throw new Error(body.message || "Failed to revoke session");
+          }
+          await loadMySessions();
+        } catch (error) {
+          alert(error.message || "Failed to revoke session");
+        }
+      }
+
+      async function logoutAllSessions() {
+        const confirmed = window.confirm("Sign out from all sessions?");
+        if (!confirmed) return;
+
+        try {
+          const res = await authFetch("/api/auth/logout-all", { method: "POST" });
+          const body = await res.json();
+          if (!res.ok || !body.success) {
+            throw new Error(body.message || "Failed to logout all sessions");
+          }
+          clearAuthSession();
+          window.location.href = "auth.html";
+        } catch (error) {
+          alert(error.message || "Failed to logout all sessions");
+        }
+      }
+
+      // --- Auth guard ---
+      (async function ensureSession() {
+        if (!getAuthToken()) {
+          const refreshed = await refreshAccessToken();
+          if (!refreshed) {
+            window.location.href = "auth.html";
+            return;
+          }
+        }
+        if (localStorage.getItem("isAdmin") === "true") {
+          window.location.href = "admin.html";
+        }
+      })();
+
+      // --- Logout ---
+      async function logout() {
+        try {
+          await authFetch("/api/auth/logout", { method: "POST" });
+        } catch (_) {
+          // Ignore logout network errors and clear local session anyway.
+        }
+        clearAuthSession();
         window.location.href = "auth.html";
       }
 
@@ -690,9 +887,7 @@
       // --- Fetch profile from /api/auth/me ---
       (async function loadProfile() {
         try {
-          const res = await fetch("/api/auth/me", {
-            headers: { Authorization: "Bearer " + authToken },
-          });
+          const res = await authFetch("/api/auth/me");
 
           if (res.status === 401) {
             // Token expired or invalid
@@ -743,6 +938,8 @@
             localStorage.setItem("isAdmin", "true");
             window.location.href = "admin.html";
           }
+
+          await loadMySessions();
         } catch (err) {
           console.error("Failed to load profile:", err);
           // Fall back to what we have in localStorage

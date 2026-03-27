@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	crand "crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +15,7 @@ import (
 	"net/http"
 	"net/smtp"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -36,7 +39,10 @@ var (
 	ErrTokenGeneration    = errors.New("failed to generate token")
 )
 
-const authTokenTTL = 7 * 24 * time.Hour
+const (
+	accessTokenTTL  = 15 * time.Minute
+	refreshTokenTTL = 14 * 24 * time.Hour
+)
 
 // 6. INTERFACE
 type Filterable interface {
@@ -106,15 +112,49 @@ type User struct {
 }
 
 type AuthToken struct {
-	Token     string    `json:"token"`
-	UserID    string    `json:"userId"`
-	ExpiresAt time.Time `json:"expiresAt"`
-	Role      string    `json:"role"`
-	IsAdmin   bool      `json:"isadmin"`
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
+	Token            string    `json:"token"`
+	RefreshToken     string    `json:"refreshToken"`
+	SessionID        string    `json:"sessionId"`
+	UserID           string    `json:"userId"`
+	ExpiresAt        time.Time `json:"expiresAt"`
+	RefreshExpiresAt time.Time `json:"refreshExpiresAt"`
+	Role             string    `json:"role"`
+	IsAdmin          bool      `json:"isadmin"`
+	Username         string    `json:"username"`
+	Email            string    `json:"email"`
 }
 
+type TokenClaims struct {
+	TokenType string `json:"tokenType"`
+	SessionID string `json:"sessionId"`
+	jwt.RegisteredClaims
+}
+
+type AuthSession struct {
+	ID         string     `json:"id"`
+	UserID     string     `json:"userId"`
+	RefreshJTI string     `json:"refreshJti"`
+	DeviceInfo string     `json:"deviceInfo"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	LastUsedAt time.Time  `json:"lastUsedAt"`
+	ExpiresAt  time.Time  `json:"expiresAt"`
+	Revoked    bool       `json:"revoked"`
+	RevokedAt  *time.Time `json:"revokedAt,omitempty"`
+}
+
+type SessionView struct {
+	SessionID  string     `json:"sessionId"`
+	UserID     string     `json:"userId"`
+	Username   string     `json:"username,omitempty"`
+	Email      string     `json:"email,omitempty"`
+	DeviceInfo string     `json:"deviceInfo"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	LastUsedAt time.Time  `json:"lastUsedAt"`
+	ExpiresAt  time.Time  `json:"expiresAt"`
+	Revoked    bool       `json:"revoked"`
+	RevokedAt  *time.Time `json:"revokedAt,omitempty"`
+	IsCurrent  bool       `json:"isCurrent"`
+}
 type Donation struct {
 	ID                 string    `json:"id"`
 	DonorName          string    `json:"donorName"`
@@ -222,7 +262,7 @@ var (
 	servicesByID map[string]*Service
 	bookingsByID map[string]*ServiceBooking
 	usersByEmail map[string]*User
-	tokenStore   map[string]*AuthToken
+	authSessions map[string]*AuthSession
 	statusCounts map[string]int
 	serviceStats map[string]map[string]interface{}
 	petsByBreed  map[string][]string
@@ -248,7 +288,7 @@ func initializeData() {
 	servicesByID = make(map[string]*Service)
 	bookingsByID = make(map[string]*ServiceBooking)
 	usersByEmail = make(map[string]*User)
-	tokenStore = make(map[string]*AuthToken)
+	authSessions = make(map[string]*AuthSession)
 	statusCounts = make(map[string]int)
 	serviceStats = make(map[string]map[string]interface{})
 	petsByBreed = make(map[string][]string)
@@ -534,20 +574,223 @@ func isUserAdmin(user *User) bool {
 	return user.IsAdmin || strings.EqualFold(strings.TrimSpace(user.Role), "admin")
 }
 
-func generateToken(userID string) string {
-	expiresAt := time.Now().Add(authTokenTTL)
-	claims := jwt.RegisteredClaims{
-		Subject:   userID,
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(expiresAt),
+func generateSecureID(prefix string) string {
+	raw := make([]byte, 16)
+	if _, err := crand.Read(raw); err != nil {
+		return fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
+	}
+	return fmt.Sprintf("%s-%s", prefix, hex.EncodeToString(raw))
+}
+
+func issueSignedToken(userID, sessionID, tokenType string, ttl time.Duration) (string, string, time.Time, error) {
+	now := time.Now()
+	jti := generateSecureID("jti")
+	expiresAt := now.Add(ttl)
+	claims := TokenClaims{
+		TokenType: tokenType,
+		SessionID: sessionID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID,
+			ID:        jti,
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+		},
 	}
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := jwtToken.SignedString(getJWTSecret())
 	if err != nil {
-		log.Printf("[ERROR] Failed to sign JWT for %s: %v", userID, err)
+		return "", "", time.Time{}, err
+	}
+	return signed, jti, expiresAt, nil
+}
+
+func createAuthSession(userID, deviceInfo string) *AuthSession {
+	now := time.Now()
+	session := &AuthSession{
+		ID:         generateSecureID("sess"),
+		UserID:     userID,
+		DeviceInfo: strings.TrimSpace(deviceInfo),
+		CreatedAt:  now,
+		LastUsedAt: now,
+		ExpiresAt:  now.Add(refreshTokenTTL),
+		Revoked:    false,
+	}
+
+	mu.Lock()
+	authSessions[session.ID] = session
+	mu.Unlock()
+
+	return session
+}
+
+func issueTokenPair(user *User, sessionID string) (*AuthToken, error) {
+	accessToken, _, accessExpiry, err := issueSignedToken(user.ID, sessionID, "access", accessTokenTTL)
+	if err != nil {
+		return nil, err
+	}
+	refreshToken, refreshJTI, refreshExpiry, err := issueSignedToken(user.ID, sessionID, "refresh", refreshTokenTTL)
+	if err != nil {
+		return nil, err
+	}
+
+	now := time.Now()
+	mu.Lock()
+	session, exists := authSessions[sessionID]
+	if !exists {
+		mu.Unlock()
+		return nil, ErrInvalidCredentials
+	}
+	session.RefreshJTI = refreshJTI
+	session.LastUsedAt = now
+	session.ExpiresAt = refreshExpiry
+	mu.Unlock()
+
+	return &AuthToken{
+		Token:            accessToken,
+		RefreshToken:     refreshToken,
+		SessionID:        sessionID,
+		UserID:           user.ID,
+		ExpiresAt:        accessExpiry,
+		RefreshExpiresAt: refreshExpiry,
+		Role:             user.Role,
+		IsAdmin:          isUserAdmin(user),
+		Username:         user.Username,
+		Email:            user.Email,
+	}, nil
+}
+
+func validateTokenClaims(tokenStr, expectedType string) (*TokenClaims, error) {
+	if strings.TrimSpace(tokenStr) == "" {
+		return nil, ErrInvalidCredentials
+	}
+
+	claims := &TokenClaims{}
+	parsedToken, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, ErrInvalidCredentials
+		}
+		return getJWTSecret(), nil
+	})
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, ErrTokenExpired
+		}
+		return nil, ErrInvalidCredentials
+	}
+
+	if !parsedToken.Valid || strings.TrimSpace(claims.Subject) == "" || strings.TrimSpace(claims.ID) == "" || strings.TrimSpace(claims.SessionID) == "" {
+		return nil, ErrInvalidCredentials
+	}
+	if expectedType != "" && claims.TokenType != expectedType {
+		return nil, ErrInvalidCredentials
+	}
+
+	return claims, nil
+}
+
+func getSession(sessionID string) (*AuthSession, bool) {
+	mu.Lock()
+	defer mu.Unlock()
+	session, exists := authSessions[sessionID]
+	if !exists {
+		return nil, false
+	}
+	sessionCopy := *session
+	return &sessionCopy, true
+}
+
+func isSessionActive(session *AuthSession, userID string) bool {
+	if session == nil || session.Revoked {
+		return false
+	}
+	if strings.TrimSpace(userID) != "" && session.UserID != userID {
+		return false
+	}
+	if time.Now().After(session.ExpiresAt) {
+		return false
+	}
+	return true
+}
+
+func revokeSessionByID(sessionID string) bool {
+	mu.Lock()
+	defer mu.Unlock()
+	session, exists := authSessions[sessionID]
+	if !exists {
+		return false
+	}
+	if session.Revoked {
+		return false
+	}
+	now := time.Now()
+	session.Revoked = true
+	session.RevokedAt = &now
+	return true
+}
+
+func revokeAllUserSessions(userID string) int {
+	mu.Lock()
+	defer mu.Unlock()
+	revoked := 0
+	now := time.Now()
+	for _, session := range authSessions {
+		if session.UserID == userID && !session.Revoked {
+			session.Revoked = true
+			session.RevokedAt = &now
+			revoked++
+		}
+	}
+	return revoked
+}
+
+func getActiveSessionsByUser(userID string) []AuthSession {
+	mu.Lock()
+	defer mu.Unlock()
+
+	now := time.Now()
+	result := make([]AuthSession, 0)
+	for _, session := range authSessions {
+		if session.UserID != userID {
+			continue
+		}
+		if session.Revoked || now.After(session.ExpiresAt) {
+			continue
+		}
+		result = append(result, *session)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].LastUsedAt.After(result[j].LastUsedAt)
+	})
+	return result
+}
+
+func getAllActiveSessions() []AuthSession {
+	mu.Lock()
+	defer mu.Unlock()
+
+	now := time.Now()
+	result := make([]AuthSession, 0)
+	for _, session := range authSessions {
+		if session.Revoked || now.After(session.ExpiresAt) {
+			continue
+		}
+		result = append(result, *session)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].LastUsedAt.After(result[j].LastUsedAt)
+	})
+	return result
+}
+
+func extractBearerToken(r *http.Request) string {
+	authHeader := strings.TrimSpace(r.Header.Get("Authorization"))
+	if authHeader == "" {
 		return ""
 	}
-	return signed
+	if !strings.HasPrefix(strings.ToLower(authHeader), "bearer ") {
+		return ""
+	}
+	return strings.TrimSpace(authHeader[len("Bearer "):])
 }
 
 func getJWTSecret() []byte {
@@ -584,7 +827,7 @@ func Register(email, username, password string) (*User, error) {
 	return &users[len(users)-1], nil
 }
 
-func Login(email, password string) (*AuthToken, error) {
+func LoginWithDevice(email, password, deviceInfo string) (*AuthToken, error) {
 	if email == "" || password == "" {
 		return nil, ErrInvalidCredentials
 	}
@@ -601,42 +844,30 @@ func Login(email, password string) (*AuthToken, error) {
 		return nil, ErrInvalidCredentials
 	}
 
-	token := AuthToken{
-		Token:     generateToken(user.ID),
-		UserID:    user.ID,
-		ExpiresAt: time.Now().Add(authTokenTTL),
-		Role:      user.Role,
-		IsAdmin:   isUserAdmin(user),
-		Username:  user.Username,
-		Email:     user.Email,
-	}
-	if token.Token == "" {
+	session := createAuthSession(user.ID, deviceInfo)
+	tokenPair, err := issueTokenPair(user, session.ID)
+	if err != nil {
+		log.Printf("[ERROR] Failed issuing token pair for %s: %v", user.ID, err)
 		return nil, ErrTokenGeneration
 	}
-	return &token, nil
+	return tokenPair, nil
+}
+
+func Login(email, password string) (*AuthToken, error) {
+	return LoginWithDevice(email, password, "")
 }
 
 func ValidateToken(tokenStr string) (*User, error) {
-	if tokenStr == "" {
+	claims, err := validateTokenClaims(tokenStr, "access")
+	if err != nil {
 		return nil, ErrInvalidCredentials
 	}
 
-	claims := &jwt.RegisteredClaims{}
-	parsedToken, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, ErrInvalidCredentials
-		}
-		return getJWTSecret(), nil
-	})
-	if err != nil {
-		if errors.Is(err, jwt.ErrTokenExpired) {
-			return nil, ErrTokenExpired
-		}
+	session, exists := getSession(claims.SessionID)
+	if !exists || !isSessionActive(session, claims.Subject) {
 		return nil, ErrInvalidCredentials
 	}
-	if !parsedToken.Valid || strings.TrimSpace(claims.Subject) == "" {
-		return nil, ErrInvalidCredentials
-	}
+
 	userID := strings.TrimSpace(claims.Subject)
 
 	user, err := getUserByIDLive(userID)
@@ -1537,6 +1768,139 @@ func respondError(w http.ResponseWriter, statusCode int, message string) {
 	})
 }
 
+func userSessionsHandler(w http.ResponseWriter, r *http.Request) {
+	tokenStr := extractBearerToken(r)
+	if tokenStr == "" {
+		respondError(w, http.StatusUnauthorized, "Missing token")
+		return
+	}
+
+	claims, err := validateTokenClaims(tokenStr, "access")
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "Invalid or expired token")
+		return
+	}
+
+	user, err := getUserByIDLive(claims.Subject)
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "Invalid token subject")
+		return
+	}
+
+	sessions := getActiveSessionsByUser(claims.Subject)
+	views := make([]SessionView, 0, len(sessions))
+	for _, session := range sessions {
+		views = append(views, SessionView{
+			SessionID:  session.ID,
+			UserID:     session.UserID,
+			Username:   user.Username,
+			Email:      user.Email,
+			DeviceInfo: session.DeviceInfo,
+			CreatedAt:  session.CreatedAt,
+			LastUsedAt: session.LastUsedAt,
+			ExpiresAt:  session.ExpiresAt,
+			Revoked:    session.Revoked,
+			RevokedAt:  session.RevokedAt,
+			IsCurrent:  session.ID == claims.SessionID,
+		})
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"count":   len(views),
+		"data":    views,
+	})
+}
+
+func userRevokeSessionHandler(w http.ResponseWriter, r *http.Request) {
+	tokenStr := extractBearerToken(r)
+	if tokenStr == "" {
+		respondError(w, http.StatusUnauthorized, "Missing token")
+		return
+	}
+
+	claims, err := validateTokenClaims(tokenStr, "access")
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "Invalid or expired token")
+		return
+	}
+
+	var req struct {
+		SessionID string `json:"sessionId"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+	defer r.Body.Close()
+
+	req.SessionID = strings.TrimSpace(req.SessionID)
+	if req.SessionID == "" {
+		respondError(w, http.StatusBadRequest, "sessionId is required")
+		return
+	}
+	if req.SessionID == claims.SessionID {
+		respondError(w, http.StatusBadRequest, "Use logout for current session")
+		return
+	}
+
+	session, exists := getSession(req.SessionID)
+	if !exists || session.UserID != claims.Subject {
+		respondError(w, http.StatusNotFound, "Session not found")
+		return
+	}
+
+	revoked := 0
+	if revokeSessionByID(req.SessionID) {
+		revoked = 1
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Session revoked",
+		"data": map[string]interface{}{
+			"revoked": revoked,
+		},
+	})
+}
+
+func adminSessionsHandler(w http.ResponseWriter, r *http.Request) {
+	if _, ok := requireAdmin(w, r); !ok {
+		return
+	}
+
+	filterUserID := strings.TrimSpace(r.URL.Query().Get("userId"))
+
+	activeSessions := getAllActiveSessions()
+	views := make([]SessionView, 0, len(activeSessions))
+	for _, session := range activeSessions {
+		if filterUserID != "" && session.UserID != filterUserID {
+			continue
+		}
+		user, err := getUserByIDLive(session.UserID)
+		view := SessionView{
+			SessionID:  session.ID,
+			UserID:     session.UserID,
+			DeviceInfo: session.DeviceInfo,
+			CreatedAt:  session.CreatedAt,
+			LastUsedAt: session.LastUsedAt,
+			ExpiresAt:  session.ExpiresAt,
+			Revoked:    session.Revoked,
+			RevokedAt:  session.RevokedAt,
+		}
+		if err == nil {
+			view.Username = user.Username
+			view.Email = user.Email
+		}
+		views = append(views, view)
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"count":   len(views),
+		"data":    views,
+	})
+}
 func getPetsHandler(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	species := query.Get("species")
@@ -2079,8 +2443,13 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	deviceInfo := strings.TrimSpace(r.Header.Get("X-Device-Info"))
+	if deviceInfo == "" {
+		deviceInfo = strings.TrimSpace(r.UserAgent())
+	}
+
 	// 5. FUNCTIONS AND ERROR HANDLING
-	token, err := Login(req.Email, req.Password)
+	token, err := LoginWithDevice(req.Email, req.Password, deviceInfo)
 	if err != nil {
 		if errors.Is(err, ErrAccountNotFound) {
 			respondError(w, http.StatusNotFound, "Account does not exist. Please sign up first.")
@@ -2103,9 +2472,57 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func refreshTokenHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		RefreshToken string `json:"refreshToken"`
+		DeviceInfo   string `json:"deviceInfo"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+	defer r.Body.Close()
+
+	claims, err := validateTokenClaims(strings.TrimSpace(req.RefreshToken), "refresh")
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "Invalid or expired refresh token")
+		return
+	}
+
+	mu.Lock()
+	session, exists := authSessions[claims.SessionID]
+	if !exists || session.Revoked || session.UserID != claims.Subject || session.RefreshJTI != claims.ID || time.Now().After(session.ExpiresAt) {
+		mu.Unlock()
+		respondError(w, http.StatusUnauthorized, "Invalid or expired refresh token")
+		return
+	}
+	if strings.TrimSpace(req.DeviceInfo) != "" {
+		session.DeviceInfo = strings.TrimSpace(req.DeviceInfo)
+	}
+	mu.Unlock()
+
+	user, err := getUserByIDLive(claims.Subject)
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "Invalid or expired refresh token")
+		return
+	}
+
+	pair, err := issueTokenPair(user, claims.SessionID)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to refresh token")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Token refreshed",
+		"data":    pair,
+	})
+}
+
 func meHandler(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+	tokenStr := extractBearerToken(r)
 	if tokenStr == "" {
 		respondError(w, http.StatusUnauthorized, "Missing token")
 		return
@@ -2124,6 +2541,91 @@ func meHandler(w http.ResponseWriter, r *http.Request) {
 			"role":      user.Role,
 			"isadmin":   isUserAdmin(user),
 			"createdAt": user.CreatedAt,
+		},
+	})
+}
+
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	tokenStr := extractBearerToken(r)
+	if tokenStr == "" {
+		respondError(w, http.StatusUnauthorized, "Missing token")
+		return
+	}
+
+	claims, err := validateTokenClaims(tokenStr, "access")
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "Invalid or expired token")
+		return
+	}
+
+	revokeSessionByID(claims.SessionID)
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Logged out",
+	})
+}
+
+func logoutAllHandler(w http.ResponseWriter, r *http.Request) {
+	tokenStr := extractBearerToken(r)
+	if tokenStr == "" {
+		respondError(w, http.StatusUnauthorized, "Missing token")
+		return
+	}
+
+	claims, err := validateTokenClaims(tokenStr, "access")
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "Invalid or expired token")
+		return
+	}
+
+	revoked := revokeAllUserSessions(claims.Subject)
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Logged out from all sessions",
+		"data": map[string]interface{}{
+			"revoked": revoked,
+		},
+	})
+}
+
+func adminRevokeSessionHandler(w http.ResponseWriter, r *http.Request) {
+	if _, ok := requireAdmin(w, r); !ok {
+		return
+	}
+
+	var req struct {
+		SessionID string `json:"sessionId"`
+		UserID    string `json:"userId"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+	defer r.Body.Close()
+
+	req.SessionID = strings.TrimSpace(req.SessionID)
+	req.UserID = strings.TrimSpace(req.UserID)
+
+	if req.SessionID == "" && req.UserID == "" {
+		respondError(w, http.StatusBadRequest, "sessionId or userId is required")
+		return
+	}
+
+	revoked := 0
+	if req.SessionID != "" {
+		if revokeSessionByID(req.SessionID) {
+			revoked = 1
+		}
+	} else {
+		revoked = revokeAllUserSessions(req.UserID)
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Session revocation completed",
+		"data": map[string]interface{}{
+			"revoked": revoked,
 		},
 	})
 }
@@ -2541,6 +3043,46 @@ func main() {
 		}
 	})))
 
+	http.HandleFunc("/api/auth/refresh", recoverPanic(enableCORS(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			refreshTokenHandler(w, r)
+		} else {
+			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})))
+
+	http.HandleFunc("/api/auth/logout", recoverPanic(enableCORS(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			logoutHandler(w, r)
+		} else {
+			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})))
+
+	http.HandleFunc("/api/auth/logout-all", recoverPanic(enableCORS(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			logoutAllHandler(w, r)
+		} else {
+			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})))
+
+	http.HandleFunc("/api/auth/sessions", recoverPanic(enableCORS(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			userSessionsHandler(w, r)
+		} else {
+			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})))
+
+	http.HandleFunc("/api/auth/sessions/revoke", recoverPanic(enableCORS(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			userRevokeSessionHandler(w, r)
+		} else {
+			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})))
+
 	http.HandleFunc("/api/auth/verify", recoverPanic(enableCORS(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			verifyEmailHandler(w, r)
@@ -2567,6 +3109,22 @@ func main() {
 		case "POST":
 			createAdoptionInquiryHandler(w, r)
 		default:
+			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})))
+
+	http.HandleFunc("/api/admin/sessions/revoke", recoverPanic(enableCORS(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			adminRevokeSessionHandler(w, r)
+		} else {
+			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})))
+
+	http.HandleFunc("/api/admin/sessions", recoverPanic(enableCORS(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			adminSessionsHandler(w, r)
+		} else {
 			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})))
@@ -2620,6 +3178,13 @@ func main() {
 	log.Println("  GET    /api/statistics        - Get statistics")
 	log.Println("  POST   /api/auth/register     - Register user")
 	log.Println("  POST   /api/auth/login        - Login user")
+	log.Println("  POST   /api/auth/refresh      - Rotate refresh/access tokens")
+	log.Println("  POST   /api/auth/logout       - Logout current session")
+	log.Println("  POST   /api/auth/logout-all   - Logout all user sessions")
+	log.Println("  GET    /api/auth/sessions     - List current user's active sessions")
+	log.Println("  POST   /api/auth/sessions/revoke - Revoke one of current user's sessions")
+	log.Println("  GET    /api/admin/sessions    - Admin list active sessions")
+	log.Println("  POST   /api/admin/sessions/revoke - Admin revoke sessions")
 	log.Println("  GET    /api/adoptions         - Get adoption inquiries")
 	log.Println("  POST   /api/adoptions         - Submit adoption inquiry")
 	log.Println("  GET    /api/donations         - Get donations")

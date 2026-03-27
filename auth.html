@@ -605,6 +605,8 @@
             // Store token and role info
             const tokenData = data.data;
             localStorage.setItem("authToken", tokenData.token);
+            localStorage.setItem("refreshToken", tokenData.refreshToken || "");
+            localStorage.setItem("sessionId", tokenData.sessionId || "");
             localStorage.setItem("userId", tokenData.userId);
             localStorage.setItem("userRole", tokenData.role);
             localStorage.setItem(
