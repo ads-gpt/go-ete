@@ -19,7 +19,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Work+Sans:wght@300;400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
 
@@ -439,51 +439,796 @@
         outline: none;
         border-color: var(--primary);
       }
+
+      :root {
+        --primary: #c78543;
+        --primary-dark: #9d5d23;
+        --secondary: #315547;
+        --accent: #efe0c8;
+        --dark: #221910;
+        --light: #f5eee3;
+        --panel: rgba(255, 250, 244, 0.9);
+        --line: rgba(112, 86, 53, 0.13);
+      }
+
+      body {
+        font-family: "Manrope", sans-serif;
+        color: var(--dark);
+        background:
+          radial-gradient(circle at top left, rgba(199, 133, 67, 0.16), transparent 26%),
+          radial-gradient(circle at 85% 18%, rgba(49, 85, 71, 0.14), transparent 20%),
+          linear-gradient(180deg, #f8f2e9 0%, #f3ecdf 50%, #eee4d5 100%);
+        min-height: 100vh;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(112, 86, 53, 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(112, 86, 53, 0.035) 1px, transparent 1px);
+        background-size: 32px 32px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.46), transparent 82%);
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        font-family: "Cormorant Garamond", serif;
+        letter-spacing: -0.02em;
+      }
+
+      .sidebar {
+        inset: 1.35rem auto 1.35rem 1.35rem;
+        width: 300px;
+        padding: 1.3rem;
+        border-radius: 32px;
+        background:
+          radial-gradient(circle at top left, rgba(255, 215, 157, 0.14), transparent 26%),
+          linear-gradient(180deg, rgba(43, 31, 20, 0.98), rgba(28, 20, 13, 0.98));
+        box-shadow: 0 26px 55px rgba(28, 19, 10, 0.34);
+      }
+
+      .main-content {
+        margin-left: 326px;
+        padding: 1.35rem 1.35rem 2rem 0;
+      }
+
+      .nav-item {
+        gap: 0.95rem;
+        padding: 0.95rem 1rem;
+        border-radius: 20px;
+        border-left: none;
+        border: 1px solid transparent;
+      }
+
+      .nav-item:hover,
+      .nav-item.active {
+        background: rgba(255, 255, 255, 0.09);
+        border-color: rgba(255, 255, 255, 0.08);
+        transform: translateX(4px);
+      }
+
+      .nav-icon {
+        width: 2.65rem;
+        height: 2.65rem;
+        border-radius: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.08);
+        color: #f6d6ab;
+        flex-shrink: 0;
+      }
+
+      .nav-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 0.12rem;
+      }
+
+      .nav-copy strong {
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+
+      .nav-copy small {
+        font-size: 0.76rem;
+        color: rgba(255, 255, 255, 0.56);
+      }
+
+      .dashboard-topbar,
+      .hero-panel,
+      .panel-surface,
+      .stat-card,
+      .table-container,
+      .modal {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        box-shadow: 0 18px 45px rgba(61, 41, 19, 0.12);
+      }
+
+      .dashboard-topbar {
+        border-radius: 30px;
+        padding: 1.4rem 1.45rem;
+        margin-bottom: 1rem;
+        display: grid;
+        grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.85fr);
+        gap: 1rem;
+        backdrop-filter: blur(16px);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.35rem 0.72rem;
+        border-radius: 999px;
+        background: rgba(199, 133, 67, 0.08);
+        border: 1px solid rgba(199, 133, 67, 0.18);
+        color: var(--primary-dark);
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .dashboard-topbar h1 {
+        font-size: clamp(2rem, 4vw, 3.3rem);
+        line-height: 0.96;
+        margin: 0.85rem 0 0.8rem;
+        max-width: 12ch;
+      }
+
+      .dashboard-topbar p {
+        color: #6f5f4b;
+        line-height: 1.65;
+        max-width: 62ch;
+      }
+
+      .topbar-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.9rem;
+      }
+
+      .topbar-meta-card {
+        border-radius: 22px;
+        padding: 1rem;
+        background: rgba(255, 252, 247, 0.84);
+        border: 1px solid rgba(112, 86, 53, 0.09);
+        min-height: 8rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .topbar-meta-card span,
+      .section-chip,
+      .hero-stat span {
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #72614c;
+      }
+
+      .topbar-meta-card strong {
+        font-size: 1.02rem;
+      }
+
+      .topbar-meta-card small {
+        color: #72614c;
+        line-height: 1.5;
+      }
+
+      .live-indicator::before {
+        content: "";
+        display: inline-block;
+        width: 0.62rem;
+        height: 0.62rem;
+        margin-right: 0.45rem;
+        border-radius: 50%;
+        background: #56b27b;
+        box-shadow: 0 0 0 0.25rem rgba(86, 178, 123, 0.16);
+      }
+
+      .hero-panel,
+      .panel-surface {
+        border-radius: 30px;
+        backdrop-filter: blur(16px);
+      }
+
+      .hero-panel {
+        padding: 1.45rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-panel::after {
+        content: "";
+        position: absolute;
+        right: -4rem;
+        bottom: -5rem;
+        width: 16rem;
+        height: 16rem;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(199, 133, 67, 0.14), transparent 65%);
+      }
+
+      .hero-panel > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .hero-panel h2 {
+        font-size: clamp(2rem, 3vw, 3rem);
+        line-height: 0.96;
+        margin: 0.7rem 0 0.75rem;
+        max-width: 14ch;
+      }
+
+      .hero-panel p {
+        color: #6f5f4b;
+        line-height: 1.7;
+      }
+
+      .hero-actions,
+      .section-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .hero-stat-grid,
+      .overview-grid {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .hero-stat-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 1.1rem;
+      }
+
+      .hero-stat {
+        padding: 0.95rem 1rem;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.62);
+        border: 1px solid rgba(112, 86, 53, 0.1);
+      }
+
+      .hero-stat strong {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 1.08rem;
+      }
+
+      .overview-grid {
+        grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.85fr);
+      }
+
+      .stat-card {
+        border-radius: 26px;
+        padding: 1.15rem;
+      }
+
+      .stat-card strong {
+        font-size: 2rem;
+      }
+
+      .stat-shell {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.9rem;
+      }
+
+      .stat-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff7ef;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      }
+
+      .panel-surface {
+        padding: 1.3rem;
+      }
+
+      .panel-surface h2 {
+        font-size: 2rem;
+        margin-bottom: 0.35rem;
+      }
+
+      .panel-surface p {
+        color: #6f5f4b;
+        line-height: 1.6;
+      }
+
+      .utility-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin: 1rem 0;
+      }
+
+      .quick-action {
+        width: 100%;
+        padding: 0.92rem 1rem;
+        border-radius: 18px;
+        border: 1px solid rgba(112, 86, 53, 0.1);
+        background: rgba(255, 255, 255, 0.68);
+        color: var(--dark);
+        font-weight: 700;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.7rem;
+        cursor: pointer;
+      }
+
+      .section {
+        animation: fadeIn 0.22s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .table-container {
+        border-radius: 30px;
+        padding: 1.2rem;
+      }
+
+      th {
+        letter-spacing: 0.14em;
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: #72614c;
+        border-bottom: 1px solid rgba(112, 86, 53, 0.12);
+      }
+
+      td {
+        border-bottom: 1px solid rgba(112, 86, 53, 0.08);
+        color: #34281d;
+      }
+
+      tbody tr:hover {
+        background: rgba(199, 133, 67, 0.05);
+      }
+
+      .badge {
+        padding: 0.36rem 0.78rem;
+        border-radius: 999px;
+      }
+
+      .btn {
+        border-radius: 16px;
+        padding: 0.8rem 1.05rem;
+        font-weight: 700;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      }
+
+      .btn-secondary {
+        background: rgba(49, 85, 71, 0.12);
+        border: 1px solid rgba(49, 85, 71, 0.14);
+        color: var(--secondary);
+      }
+
+      .btn-refresh {
+        padding: 0.8rem 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(112, 86, 53, 0.13);
+        background: rgba(255, 255, 255, 0.74);
+      }
+
+      .btn-logout {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .modal {
+        border-radius: 28px;
+        background: linear-gradient(180deg, rgba(255, 251, 245, 0.99), rgba(247, 239, 229, 0.96));
+      }
+
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        border-radius: 14px;
+        border-color: rgba(112, 86, 53, 0.16);
+        background: rgba(255, 255, 255, 0.88);
+      }
+
+      .form-group input:focus,
+      .form-group select:focus,
+      .form-group textarea:focus {
+        border-color: rgba(199, 133, 67, 0.6);
+        box-shadow: 0 0 0 3px rgba(199, 133, 67, 0.12);
+      }
+
+      @media (max-width: 1024px) {
+        .sidebar {
+          width: min(86vw, 320px);
+          transform: translateX(calc(-100% - 1rem));
+          transition: transform 0.28s ease;
+        }
+
+        .sidebar.active {
+          transform: translateX(0);
+        }
+
+        .main-content {
+          margin-left: 0;
+          padding: 1rem;
+        }
+
+        .dashboard-topbar,
+        .overview-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .hero-stat-grid,
+        .topbar-meta-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Layout refinement */
+      body {
+        background:
+          linear-gradient(180deg, #f6efe5 0%, #f1e8db 100%);
+      }
+
+      body::before {
+        opacity: 0.45;
+      }
+
+      .sidebar {
+        left: 0;
+        top: 0;
+        bottom: 0;
+        inset: 0 auto 0 0;
+        width: 288px;
+        padding: 1rem 1rem 0.9rem;
+        border-radius: 0 30px 30px 0;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 18px 0 42px rgba(28, 19, 10, 0.18);
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        overflow: hidden;
+      }
+
+      .main-content {
+        margin-left: 288px;
+        padding: 1.2rem 1.2rem 2rem;
+      }
+
+      .sidebar-brand {
+        margin-bottom: 0.35rem !important;
+      }
+
+      .sidebar-brand .mb-4 {
+        margin-bottom: 0.8rem !important;
+      }
+
+      .sidebar-brand .text-2xl {
+        font-size: 1.45rem;
+        line-height: 1.1;
+      }
+
+      .nav-cluster {
+        gap: 0.35rem;
+      }
+
+      .dashboard-topbar,
+      .hero-panel,
+      .panel-surface,
+      .table-container,
+      .stat-card {
+        border-radius: 24px;
+        background: rgba(255, 250, 244, 0.92);
+        box-shadow: 0 10px 28px rgba(61, 41, 19, 0.08);
+      }
+
+      .dashboard-topbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 1rem;
+        padding: 1.2rem 1.3rem;
+      }
+
+      .topbar-copy {
+        max-width: 46rem;
+      }
+
+      .dashboard-topbar h1 {
+        font-size: clamp(2rem, 3vw, 2.8rem);
+        line-height: 1;
+        margin: 0.6rem 0 0.5rem;
+        max-width: none;
+      }
+
+      .dashboard-topbar p {
+        max-width: 44rem;
+        font-size: 0.98rem;
+      }
+
+      .topbar-meta-grid {
+        grid-template-columns: minmax(180px, 220px);
+        align-items: start;
+        justify-content: end;
+      }
+
+      .topbar-meta-card {
+        min-height: 0;
+        gap: 0.6rem;
+        padding: 1rem 1.05rem;
+      }
+
+      .topbar-meta-card strong {
+        font-size: 1.15rem;
+        line-height: 1.3;
+      }
+
+      .topbar-meta-card small {
+        font-size: 0.9rem;
+      }
+
+      .hero-panel {
+        padding: 1.25rem 1.3rem;
+      }
+
+      .hero-panel h2 {
+        font-size: clamp(1.8rem, 2.6vw, 2.4rem);
+        margin: 0.55rem 0 0.45rem;
+        max-width: none;
+      }
+
+      .hero-panel p {
+        max-width: 48rem;
+        font-size: 0.98rem;
+      }
+
+      .hero-panel::after {
+        width: 12rem;
+        height: 12rem;
+        right: -3rem;
+        bottom: -4rem;
+      }
+
+      .hero-stat-grid {
+        grid-template-columns: repeat(3, minmax(0, 220px));
+        margin-top: 1rem;
+      }
+
+      .hero-stat {
+        border-radius: 18px;
+        padding: 0.9rem 1rem;
+      }
+
+      .stat-card {
+        padding: 1rem;
+      }
+
+      .stat-card strong {
+        font-size: 1.7rem;
+      }
+
+      .stat-icon {
+        width: 2.7rem;
+        height: 2.7rem;
+      }
+
+      .overview-grid {
+        grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.9fr);
+      }
+
+      .table-container {
+        padding: 1rem 1.05rem;
+      }
+
+      .panel-surface {
+        padding: 1.15rem;
+      }
+
+      .panel-surface h2 {
+        font-size: 1.7rem;
+      }
+
+      .quick-action {
+        border-radius: 14px;
+        padding: 0.85rem 0.95rem;
+      }
+
+      .nav-item {
+        padding: 0.72rem 0.8rem;
+        border-radius: 16px;
+        gap: 0.75rem;
+      }
+
+      .nav-icon {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 0.8rem;
+        font-size: 0.88rem;
+      }
+
+      .nav-copy strong {
+        font-size: 0.86rem;
+        line-height: 1.15;
+      }
+
+      .nav-copy small {
+        font-size: 0.68rem;
+        line-height: 1.2;
+      }
+
+      .sidebar-footer {
+        margin-top: 0.65rem !important;
+        gap: 0.7rem !important;
+      }
+
+      .sidebar-quick {
+        border-radius: 18px !important;
+        padding: 0.75rem !important;
+      }
+
+      .sidebar-quick .text-\[0\.68rem\] {
+        font-size: 0.62rem !important;
+        margin-bottom: 0.35rem !important;
+      }
+
+      .sidebar-quick button {
+        border-radius: 12px !important;
+        padding: 0.72rem 0.85rem !important;
+        font-size: 0.84rem !important;
+      }
+
+      .btn-logout {
+        padding: 0.72rem 0.95rem;
+        min-height: 0;
+      }
+
+      @media (max-width: 1024px) {
+        .sidebar {
+          width: min(84vw, 300px);
+          transform: translateX(-100%);
+          border-radius: 0 24px 24px 0;
+          overflow-y: auto;
+        }
+
+        .sidebar.active {
+          transform: translateX(0);
+        }
+
+        .main-content {
+          margin-left: 0;
+          padding: 1rem;
+        }
+
+        .dashboard-topbar,
+        .overview-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .topbar-meta-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .dashboard-topbar {
+          padding: 1rem;
+        }
+
+        .hero-stat-grid,
+        .topbar-meta-grid {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-      <div class="px-8 mb-8">
-        <div class="flex items-center gap-3 mb-2">
+      <div class="sidebar-brand mb-4">
+        <div class="flex items-center gap-3 mb-4">
           <div
-            class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center"
+            class="w-14 h-14 rounded-[1.2rem] bg-white/10 flex items-center justify-center"
+            style="background: linear-gradient(135deg, rgba(199, 133, 67, 0.95), rgba(157, 93, 35, 0.95))"
           >
-            <i class="fas fa-paw text-2xl"></i>
+            <i class="fas fa-paw text-2xl text-white"></i>
           </div>
-          <span class="text-xl font-bold">Pawtner Hope</span>
+          <div>
+            <p class="text-2xl font-bold tracking-tight">Pawtner Hope</p>
+            <p class="text-white/60 text-sm">Admin dashboard</p>
+          </div>
         </div>
-        <p class="text-white/70 text-sm">Admin Dashboard</p>
       </div>
 
-      <nav>
+      <nav class="nav-cluster">
         <a href="#" class="nav-item active" data-section="overview">
-          <i class="fas fa-chart-line"></i>
-          <span>Overview</span>
+          <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
+          <span class="nav-copy">
+            <strong>Overview</strong>
+            <small>Live rescue pulse</small>
+          </span>
         </a>
         <a href="#" class="nav-item" data-section="pets">
-          <i class="fas fa-paw"></i>
-          <span>Manage Pets</span>
+          <span class="nav-icon"><i class="fas fa-paw"></i></span>
+          <span class="nav-copy">
+            <strong>Manage Pets</strong>
+            <small>Profiles, status, vaccination</small>
+          </span>
         </a>
         <a href="#" class="nav-item" data-section="adoptions">
-          <i class="fas fa-home"></i>
-          <span>Adoptions</span>
+          <span class="nav-icon"><i class="fas fa-home"></i></span>
+          <span class="nav-copy">
+            <strong>Adoptions</strong>
+            <small>Review and resolve inquiries</small>
+          </span>
         </a>
         <a href="#" class="nav-item" data-section="bookings">
-          <i class="fas fa-calendar-check"></i>
-          <span>Bookings</span>
+          <span class="nav-icon"><i class="fas fa-calendar-check"></i></span>
+          <span class="nav-copy">
+            <strong>Bookings</strong>
+            <small>Service appointments</small>
+          </span>
         </a>
         <a href="#" class="nav-item" data-section="donations">
-          <i class="fas fa-heart"></i>
-          <span>Donations</span>
+          <span class="nav-icon"><i class="fas fa-heart"></i></span>
+          <span class="nav-copy">
+            <strong>Donations</strong>
+            <small>Contribution history</small>
+          </span>
         </a>
         <a href="#" class="nav-item" data-section="messages">
-          <i class="fas fa-envelope"></i>
-          <span>Messages</span>
+          <span class="nav-icon"><i class="fas fa-envelope"></i></span>
+          <span class="nav-copy">
+            <strong>Messages</strong>
+            <small>Visitor contact queue</small>
+          </span>
         </a>
       </nav>
 
-      <div class="px-8 mt-auto absolute bottom-8">
+      <div class="sidebar-footer mt-auto space-y-4">
+        <div class="sidebar-quick rounded-3xl border border-white/10 bg-white/5 p-4">
+          <div class="text-[0.68rem] font-bold uppercase tracking-[0.22em] text-white/50 mb-2">
+            Quick Route
+          </div>
+          <button
+            type="button"
+            class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+            onclick="activateSection('pets'); openPetModal()"
+          >
+            <i class="fas fa-plus mr-2"></i>Add a new pet record
+          </button>
+        </div>
         <button
           onclick="logout()"
           class="btn btn-logout w-full flex items-center justify-center gap-2"
@@ -501,78 +1246,223 @@
         <i class="fas fa-bars"></i> Menu
       </button>
 
+      <section class="dashboard-topbar">
+        <div class="topbar-copy">
+          <span class="eyebrow">
+            <i class="fas fa-table-columns"></i>
+            Control Center
+          </span>
+          <h1>Admin Dashboard</h1>
+          <p>
+            Manage pets, adoptions, bookings, donations, and visitor messages
+            from one clean workspace.
+          </p>
+        </div>
+        <div class="topbar-meta-grid">
+          <div class="topbar-meta-card">
+            <span>Signed In</span>
+            <strong id="admin-username">Administrator</strong>
+            <small id="admin-email">admin@pawtner.com</small>
+          </div>
+        </div>
+      </section>
+
       <!-- Overview Section -->
       <section id="overview" class="section active">
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold mb-2">Dashboard Overview</h1>
-          <p class="text-gray-600">
-            Welcome back! Here's what's happening today.
-          </p>
+        <div class="mb-4">
+          <article class="hero-panel">
+            <div>
+              <span class="eyebrow">
+                <i class="fas fa-chart-line"></i>
+                Overview
+              </span>
+              <h2>Today's snapshot</h2>
+              <p>
+                Review key rescue activity at a glance, then jump directly into
+                the queue that needs action.
+              </p>
+            </div>
+            <div class="hero-actions mt-5">
+              <button
+                onclick="activateSection('pets'); openPetModal()"
+                class="btn btn-primary"
+              >
+                <i class="fas fa-plus"></i> Add Pet
+              </button>
+              <button
+                class="btn-refresh"
+                onclick="refreshSection('overview', this)"
+              >
+                <i class="fas fa-rotate-right"></i> Refresh Overview
+              </button>
+            </div>
+            <div class="hero-stat-grid">
+              <div class="hero-stat">
+                <span>Available Pets</span>
+                <strong id="overview-available-pets">0</strong>
+              </div>
+              <div class="hero-stat">
+                <span>Vaccination Rate</span>
+                <strong id="overview-vaccination-rate">0%</strong>
+              </div>
+              <div class="hero-stat">
+                <span>Average Age</span>
+                <strong id="overview-average-age">0y</strong>
+              </div>
+            </div>
+          </article>
         </div>
 
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 mb-4">
           <div class="stat-card">
-            <div class="flex items-center justify-between mb-3">
-              <div class="text-3xl" style="color: var(--primary)">
-                <i class="fas fa-paw"></i>
+            <div class="stat-shell">
+              <div>
+                <span>Total Pets</span>
+                <strong id="stat-pets">0</strong>
+                <p class="mt-2 text-sm text-stone-500">All active pet records</p>
               </div>
-              <span class="text-2xl font-bold" id="stat-pets">0</span>
+              <div class="stat-icon"><i class="fas fa-paw"></i></div>
             </div>
-            <p class="text-gray-600 text-sm">Total Pets</p>
           </div>
 
           <div class="stat-card">
-            <div class="flex items-center justify-between mb-3">
-              <div class="text-3xl" style="color: var(--primary)">
-                <i class="fas fa-home"></i>
+            <div class="stat-shell">
+              <div>
+                <span>Adoption Inquiries</span>
+                <strong id="stat-adoptions">0</strong>
+                <p class="mt-2 text-sm text-stone-500">Requests awaiting review</p>
               </div>
-              <span class="text-2xl font-bold" id="stat-adoptions">0</span>
+              <div class="stat-icon"><i class="fas fa-home"></i></div>
             </div>
-            <p class="text-gray-600 text-sm">Adoption Inquiries</p>
           </div>
 
           <div class="stat-card">
-            <div class="flex items-center justify-between mb-3">
-              <div class="text-3xl" style="color: var(--primary)">
-                <i class="fas fa-calendar-check"></i>
+            <div class="stat-shell">
+              <div>
+                <span>Service Bookings</span>
+                <strong id="stat-bookings">0</strong>
+                <p class="mt-2 text-sm text-stone-500">Upcoming care appointments</p>
               </div>
-              <span class="text-2xl font-bold" id="stat-bookings">0</span>
+              <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
             </div>
-            <p class="text-gray-600 text-sm">Service Bookings</p>
           </div>
 
           <div class="stat-card">
-            <div class="flex items-center justify-between mb-3">
-              <div class="text-3xl" style="color: var(--primary)">
-                <i class="fas fa-users"></i>
+            <div class="stat-shell">
+              <div>
+                <span>Total Users</span>
+                <strong id="stat-users">0</strong>
+                <p class="mt-2 text-sm text-stone-500">Registered community accounts</p>
               </div>
-              <span class="text-2xl font-bold" id="stat-users">0</span>
+              <div class="stat-icon"><i class="fas fa-users"></i></div>
             </div>
-            <p class="text-gray-600 text-sm">Total Users</p>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-shell">
+              <div>
+                <span>Donations</span>
+                <strong id="stat-donations">0</strong>
+                <p class="mt-2 text-sm text-stone-500">Recorded contributions</p>
+              </div>
+              <div class="stat-icon"><i class="fas fa-heart"></i></div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-shell">
+              <div>
+                <span>Under Care</span>
+                <strong id="overview-under-care">0</strong>
+                <p class="mt-2 text-sm text-stone-500">Pets in treatment or recovery</p>
+              </div>
+              <div class="stat-icon"><i class="fas fa-stethoscope"></i></div>
+            </div>
           </div>
         </div>
 
         <!-- Recent Activity -->
-        <div class="table-container">
-          <h2 class="text-xl font-bold mb-4">Recent Adoption Inquiries</h2>
-          <div id="recent-adoptions">Loading...</div>
+        <div class="overview-grid">
+          <div class="table-container">
+            <div class="flex items-end justify-between gap-4 mb-4">
+              <div>
+                <h2 class="text-3xl font-bold">Recent Adoption Activity</h2>
+                <p class="text-stone-500">
+                  The newest inquiries are surfaced here first for quick triage.
+                </p>
+              </div>
+            </div>
+            <div id="recent-adoptions">Loading...</div>
+          </div>
+
+          <div class="panel-surface">
+            <span class="section-chip">Quick Routes</span>
+            <h2>Jump into work</h2>
+            <p>
+              Open the right workspace immediately without hunting through the
+              navigation.
+            </p>
+            <div class="utility-actions">
+              <button type="button" class="quick-action" onclick="activateSection('adoptions')">
+                Review adoption queue <i class="fas fa-arrow-right"></i>
+              </button>
+              <button type="button" class="quick-action" onclick="activateSection('bookings')">
+                Inspect bookings <i class="fas fa-arrow-right"></i>
+              </button>
+              <button type="button" class="quick-action" onclick="activateSection('messages')">
+                Open contact messages <i class="fas fa-arrow-right"></i>
+              </button>
+            </div>
+            <div class="space-y-4 mt-6">
+              <div class="flex items-end justify-between gap-3 border-b border-stone-200/70 pb-3">
+                <div>
+                  <span class="section-chip">Last Sync</span>
+                  <strong class="block text-xl mt-1" id="overview-last-sync">Waiting</strong>
+                </div>
+                <i class="fas fa-clock text-stone-400"></i>
+              </div>
+              <div class="flex items-end justify-between gap-3 border-b border-stone-200/70 pb-3">
+                <div>
+                  <span class="section-chip">Pending Inquiries</span>
+                  <strong class="block text-xl mt-1" id="overview-pending-inquiries">0</strong>
+                </div>
+                <i class="fas fa-inbox text-stone-400"></i>
+              </div>
+              <div class="flex items-end justify-between gap-3">
+                <div>
+                  <span class="section-chip">Console Owner</span>
+                  <strong class="block text-xl mt-1" id="admin-username-card">Administrator</strong>
+                </div>
+                <i class="fas fa-user-shield text-stone-400"></i>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       <!-- Pets Section -->
       <section id="pets" class="section">
-        <div class="mb-8 flex items-center justify-between">
+        <div class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
-            <h1 class="text-3xl font-bold mb-2">Manage Pets</h1>
-            <p class="text-gray-600">View and manage all pets in the system</p>
+            <span class="section-chip">Pet Registry</span>
+            <h1 class="text-4xl font-bold mb-2">Manage Pets</h1>
+            <p>
+              Update rescue profiles, availability, care status, and vaccination
+              details without leaving the dashboard.
+            </p>
           </div>
-          <button
-            onclick="openPetModal()"
-            class="btn btn-primary flex items-center gap-2"
-          >
-            <i class="fas fa-plus"></i> Add Pet
-          </button>
+          <div class="section-toolbar">
+            <button
+              onclick="openPetModal()"
+              class="btn btn-primary flex items-center gap-2"
+            >
+              <i class="fas fa-plus"></i> Add Pet
+            </button>
+            <button class="btn-refresh" onclick="refreshSection('pets', this)">
+              <i class="fas fa-rotate-right"></i> Refresh
+            </button>
+          </div>
         </div>
 
         <div class="table-container">
@@ -582,17 +1472,23 @@
 
       <!-- Adoptions Section -->
       <section id="adoptions" class="section">
-        <div class="mb-8 flex items-center justify-between gap-4">
+        <div class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
-            <h1 class="text-3xl font-bold mb-2">Adoption Inquiries</h1>
-            <p class="text-gray-600">Manage adoption requests</p>
+            <span class="section-chip">Adoption Queue</span>
+            <h1 class="text-4xl font-bold mb-2">Adoption Inquiries</h1>
+            <p>
+              Review every request with enough context to approve, reject, or
+              follow up quickly.
+            </p>
           </div>
-          <button
-            class="btn-refresh"
-            onclick="refreshSection('adoptions', this)"
-          >
-            <i class="fas fa-rotate-right"></i> Refresh
-          </button>
+          <div class="section-toolbar">
+            <button
+              class="btn-refresh"
+              onclick="refreshSection('adoptions', this)"
+            >
+              <i class="fas fa-rotate-right"></i> Refresh
+            </button>
+          </div>
         </div>
 
         <div class="table-container">
@@ -602,17 +1498,23 @@
 
       <!-- Bookings Section -->
       <section id="bookings" class="section">
-        <div class="mb-8 flex items-center justify-between gap-4">
+        <div class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
-            <h1 class="text-3xl font-bold mb-2">Service Bookings</h1>
-            <p class="text-gray-600">Manage service appointments</p>
+            <span class="section-chip">Service Desk</span>
+            <h1 class="text-4xl font-bold mb-2">Service Bookings</h1>
+            <p>
+              Track care appointments, owner details, pet notes, and booking
+              status from one clean workspace.
+            </p>
           </div>
-          <button
-            class="btn-refresh"
-            onclick="refreshSection('bookings', this)"
-          >
-            <i class="fas fa-rotate-right"></i> Refresh
-          </button>
+          <div class="section-toolbar">
+            <button
+              class="btn-refresh"
+              onclick="refreshSection('bookings', this)"
+            >
+              <i class="fas fa-rotate-right"></i> Refresh
+            </button>
+          </div>
         </div>
 
         <div class="table-container">
@@ -622,17 +1524,23 @@
 
       <!-- Donations Section -->
       <section id="donations" class="section">
-        <div class="mb-8 flex items-center justify-between gap-4">
+        <div class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
-            <h1 class="text-3xl font-bold mb-2">Donations</h1>
-            <p class="text-gray-600">View donation history</p>
+            <span class="section-chip">Support Ledger</span>
+            <h1 class="text-4xl font-bold mb-2">Donations</h1>
+            <p>
+              Monitor contribution flow, payment methods, transaction status,
+              and donor information in a single ledger.
+            </p>
           </div>
-          <button
-            class="btn-refresh"
-            onclick="refreshSection('donations', this)"
-          >
-            <i class="fas fa-rotate-right"></i> Refresh
-          </button>
+          <div class="section-toolbar">
+            <button
+              class="btn-refresh"
+              onclick="refreshSection('donations', this)"
+            >
+              <i class="fas fa-rotate-right"></i> Refresh
+            </button>
+          </div>
         </div>
 
         <div class="table-container">
@@ -642,17 +1550,23 @@
 
       <!-- Messages Section -->
       <section id="messages" class="section">
-        <div class="mb-8 flex items-center justify-between gap-4">
+        <div class="panel-surface mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
-            <h1 class="text-3xl font-bold mb-2">Contact Messages</h1>
-            <p class="text-gray-600">Messages from visitors</p>
+            <span class="section-chip">Inbox</span>
+            <h1 class="text-4xl font-bold mb-2">Contact Messages</h1>
+            <p>
+              Keep visitor concerns visible and make it easier to respond with
+              the full message context.
+            </p>
           </div>
-          <button
-            class="btn-refresh"
-            onclick="refreshSection('messages', this)"
-          >
-            <i class="fas fa-rotate-right"></i> Refresh
-          </button>
+          <div class="section-toolbar">
+            <button
+              class="btn-refresh"
+              onclick="refreshSection('messages', this)"
+            >
+              <i class="fas fa-rotate-right"></i> Refresh
+            </button>
+          </div>
         </div>
 
         <div class="table-container">
@@ -993,6 +1907,37 @@
         }, 1800);
       }
 
+      function setTextIfPresent(id, value) {
+        const node = document.getElementById(id);
+        if (node) {
+          node.textContent = value;
+        }
+      }
+
+      function updateAdminIdentity(user = {}) {
+        const username =
+          user.username ||
+          localStorage.getItem("username") ||
+          "Administrator";
+        const email =
+          user.email || localStorage.getItem("userEmail") || "admin@pawtner.com";
+
+        setTextIfPresent("admin-username", username);
+        setTextIfPresent("admin-username-card", username);
+        setTextIfPresent("admin-email", email);
+      }
+
+      function markDashboardSynced() {
+        const stamp = new Date().toLocaleString([], {
+          day: "2-digit",
+          month: "short",
+          hour: "numeric",
+          minute: "2-digit",
+        });
+        setTextIfPresent("overview-last-sync", stamp);
+        setTextIfPresent("overview-last-sync-top", `Updated ${stamp}`);
+      }
+
       function setRefreshButtonLoading(button, isLoading) {
         if (!button) return;
         const icon = button.querySelector("i");
@@ -1038,6 +1983,9 @@
           const isAdmin = payload.data.isadmin === true;
           localStorage.setItem("isAdmin", isAdmin ? "true" : "false");
           localStorage.setItem("userRole", payload.data.role || "user");
+          localStorage.setItem("username", payload.data.username || "Administrator");
+          localStorage.setItem("userEmail", payload.data.email || "");
+          updateAdminIdentity(payload.data);
 
           if (!isAdmin) {
             window.location.href = "dashboard.html";
@@ -1050,6 +1998,22 @@
           localStorage.removeItem("isAdmin");
           window.location.href = "auth.html";
           return false;
+        }
+      }
+
+      function activateSection(targetSection) {
+        navItems.forEach((nav) => {
+          nav.classList.toggle("active", nav.dataset.section === targetSection);
+        });
+
+        sections.forEach((section) => {
+          section.classList.toggle("active", section.id === targetSection);
+        });
+
+        loadSectionData(targetSection);
+
+        if (window.innerWidth < 768) {
+          sidebar.classList.remove("active");
         }
       }
 
@@ -1070,26 +2034,7 @@
       navItems.forEach((item) => {
         item.addEventListener("click", (e) => {
           e.preventDefault();
-          const targetSection = item.dataset.section;
-
-          // Update active states
-          navItems.forEach((nav) => nav.classList.remove("active"));
-          item.classList.add("active");
-
-          sections.forEach((section) => {
-            section.classList.remove("active");
-            if (section.id === targetSection) {
-              section.classList.add("active");
-            }
-          });
-
-          // Load data for the section
-          loadSectionData(targetSection);
-
-          // Close mobile menu
-          if (window.innerWidth < 768) {
-            sidebar.classList.remove("active");
-          }
+          activateSection(item.dataset.section);
         });
       });
 
@@ -1110,6 +2055,7 @@
           const response = await authFetch("/api/statistics");
           const res = await response.json();
           const stats = res.data || {};
+          const petsByStatus = stats.petsByStatus || {};
 
           document.getElementById("stat-pets").textContent =
             stats.totalPets || 0;
@@ -1119,6 +2065,19 @@
             stats.totalBookings || 0;
           document.getElementById("stat-users").textContent =
             stats.totalUsers || 0;
+          setTextIfPresent("stat-donations", stats.totalDonations || 0);
+          setTextIfPresent("overview-available-pets", petsByStatus.Available || 0);
+          setTextIfPresent("overview-under-care", petsByStatus["Under Care"] || 0);
+          setTextIfPresent("overview-adopted-pets", petsByStatus.Adopted || 0);
+          setTextIfPresent(
+            "overview-vaccination-rate",
+            `${Math.round(stats.vaccinationRate || 0)}%`,
+          );
+          setTextIfPresent(
+            "overview-average-age",
+            `${Number(stats.averageAge || 0).toFixed(1)}y`,
+          );
+          markDashboardSynced();
           return true;
         } catch (error) {
           console.error("Error loading statistics:", error);
@@ -1152,10 +2111,15 @@
           const response = await authFetch("/api/adoptions");
           const res = await response.json();
           const adoptions = res.data || [];
+          const pendingCount = adoptions.filter(
+            (adoption) => adoption.status === "Pending",
+          ).length;
+          setTextIfPresent("overview-pending-inquiries", pendingCount);
 
           if (!adoptions || adoptions.length === 0) {
             document.getElementById("recent-adoptions").innerHTML =
               '<p class="text-gray-500 text-center py-4">No adoption inquiries yet</p>';
+            markDashboardSynced();
             return true;
           }
 
@@ -1188,6 +2152,7 @@
               </tbody>
             </table>
           `;
+          markDashboardSynced();
           return true;
         } catch (error) {
           console.error("Error loading adoptions:", error);
@@ -1211,6 +2176,7 @@
           if (pets.length === 0) {
             document.getElementById("pets-table").innerHTML =
               '<p class="text-gray-500 text-center py-8">No pets found. Click "Add Pet" to add one.</p>';
+            markDashboardSynced();
             return true;
           }
 
@@ -1257,6 +2223,7 @@
               </tbody>
             </table>
           `;
+          markDashboardSynced();
           return true;
         } catch (error) {
           console.error("Error loading pets:", error);
@@ -1281,10 +2248,15 @@
           }
           const adoptions = res.data || [];
           _adoptionsCache = adoptions;
+          setTextIfPresent(
+            "overview-pending-inquiries",
+            adoptions.filter((adoption) => adoption.status === "Pending").length,
+          );
 
           if (!adoptions || adoptions.length === 0) {
             document.getElementById("adoptions-table").innerHTML =
               '<p class="text-gray-500 text-center py-8">No adoption inquiries yet</p>';
+            markDashboardSynced();
             return true;
           }
 
@@ -1328,6 +2300,7 @@
               </tbody>
             </table>
           `;
+          markDashboardSynced();
           return true;
         } catch (error) {
           console.error("Error loading adoptions:", error);
@@ -1350,6 +2323,7 @@
           if (!bookings || bookings.length === 0) {
             document.getElementById("bookings-table").innerHTML =
               '<p class="text-gray-500 text-center py-8">No bookings yet</p>';
+            markDashboardSynced();
             return true;
           }
 
@@ -1390,6 +2364,7 @@
               </tbody>
             </table>
           `;
+          markDashboardSynced();
           return true;
         } catch (error) {
           console.error("Error loading bookings:", error);
@@ -1412,6 +2387,7 @@
           if (!donations || donations.length === 0) {
             document.getElementById("donations-table").innerHTML =
               '<p class="text-gray-500 text-center py-8">No donations yet</p>';
+            markDashboardSynced();
             return true;
           }
 
@@ -1449,6 +2425,7 @@
               </tbody>
             </table>
           `;
+          markDashboardSynced();
           return true;
         } catch (error) {
           console.error("Error loading donations:", error);
@@ -1470,6 +2447,7 @@
           if (!messages || messages.length === 0) {
             document.getElementById("messages-table").innerHTML =
               '<p class="text-gray-500 text-center py-8">No contact messages yet</p>';
+            markDashboardSynced();
             return true;
           }
 
@@ -1506,6 +2484,7 @@
               </tbody>
             </table>
           `;
+          markDashboardSynced();
           return true;
         } catch (error) {
           console.error("Error loading messages:", error);
@@ -1648,6 +2627,7 @@
 
       // Initialize
       (async function initializeAdminDashboard() {
+        updateAdminIdentity();
         const allowed = await enforceAdminAccess();
         if (!allowed) return;
         loadStatistics();
