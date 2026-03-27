@@ -574,15 +574,34 @@
             ></i
             >Active Sessions
           </h3>
-          <div id="my-sessions-list" style="display: flex; flex-direction: column; gap: 0.75rem">
+          <div
+            id="my-sessions-list"
+            style="display: flex; flex-direction: column; gap: 0.75rem"
+          >
             <div class="skeleton" style="height: 52px"></div>
             <div class="skeleton" style="height: 52px"></div>
           </div>
-          <div style="margin-top: 1rem; display: flex; gap: 0.6rem; flex-wrap: wrap">
+          <div
+            style="
+              margin-top: 1rem;
+              display: flex;
+              gap: 0.6rem;
+              flex-wrap: wrap;
+            "
+          >
             <button
               type="button"
               onclick="logoutAllSessions()"
-              style="border:1px solid #eadfce;background:#fff6ea;color:#8b5a2b;padding:0.45rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:600;cursor:pointer"
+              style="
+                border: 1px solid #eadfce;
+                background: #fff6ea;
+                color: #8b5a2b;
+                padding: 0.45rem 0.8rem;
+                border-radius: 999px;
+                font-size: 0.78rem;
+                font-weight: 600;
+                cursor: pointer;
+              "
             >
               Sign out all sessions
             </button>
@@ -832,7 +851,9 @@
         if (!confirmed) return;
 
         try {
-          const res = await authFetch("/api/auth/logout-all", { method: "POST" });
+          const res = await authFetch("/api/auth/logout-all", {
+            method: "POST",
+          });
           const body = await res.json();
           if (!res.ok || !body.success) {
             throw new Error(body.message || "Failed to logout all sessions");

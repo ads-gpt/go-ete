@@ -1828,11 +1828,15 @@
             <span class="section-chip">Security</span>
             <h1 class="text-4xl font-bold mb-2">Active Sessions</h1>
             <p>
-              View currently active sessions and revoke compromised sessions immediately.
+              View currently active sessions and revoke compromised sessions
+              immediately.
             </p>
           </div>
           <div class="section-toolbar">
-            <button class="btn-refresh" onclick="refreshSection('sessions', this)">
+            <button
+              class="btn-refresh"
+              onclick="refreshSection('sessions', this)"
+            >
               <i class="fas fa-rotate-right"></i> Refresh
             </button>
           </div>
@@ -1840,7 +1844,9 @@
 
         <div class="table-container">
           <div id="sessions-table">
-            <p class="text-gray-500 text-center py-8">Active sessions will be displayed here</p>
+            <p class="text-gray-500 text-center py-8">
+              Active sessions will be displayed here
+            </p>
           </div>
         </div>
       </section>
